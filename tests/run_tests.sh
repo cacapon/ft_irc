@@ -1,30 +1,31 @@
 #!/bin/bash
-# tests/test_main.sh
+source tests/test_helper.sh
 
-PASS=0
-FAIL=0
+TOTAL_FAIL=0
 
-# テスト関数
-check() {
-    local description=$1
-    local expected=$2
-    local actual=$3
-
-    if [ "$actual" = "$expected" ]; then
-        echo "OK: $description"
-        PASS=$((PASS + 1))
-    else
-        echo "FAIL: $description"
-        echo "  expected: $expected"
-        echo "  actual:   $actual"
-        FAIL=$((FAIL + 1))
+run() {
+    local script=$1
+    bash $script
+    if [ $? -ne 0 ]; then
+        TOTAL_FAIL=$((TOTAL_FAIL + 1))
     fi
+    echo ""
 }
 
-# テスト実行
-check "hello返す" "hello" "$(./ircserv)"
-
-# 結果
+# コンパイル確認
+make re > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "FAIL: コンパイルエラー"
+    exit 1
+fi
+echo "OK: コンパイル"
 echo ""
-echo "Result: $PASS passed, $FAIL failed"
-[ $FAIL -eq 0 ] && exit 0 || exit 1
+
+# テスト実行
+run tests/test_main.sh
+# run tests/test_auth.sh  ← 増えたら追加
+
+# 総合結果
+echo "================================"
+[ $TOTAL_FAIL -eq 0 ] && echo "All tests passed!" || echo "$TOTAL_FAIL test file(s) failed!"
+[ $TOTAL_FAIL -eq 0 ] && exit 0 || exit 1
