@@ -1,0 +1,32 @@
+---
+Language: Cpp
+BasedOnStyle: Google
+Standard: Cpp03
+
+# インデント
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+AccessModifierOffset: -4
+
+# 行の長さ
+ColumnLimit: 120
+
+# 括弧
+BreakBeforeBraces: Allman
+
+# スペース
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+SpacesInAngles: false
+
+# ポインタ・参照のスタイル
+PointerAlignment: Left
+
+# インクルード整理
+SortIncludes: true
+
+# その他
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
