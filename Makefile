@@ -6,7 +6,7 @@
 #    By: ttsubo <ttsubo@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/07/13 12:46:57 by ttsubo            #+#    #+#              #
-#    Updated: 2026/05/24 16:48:19 by ttsubo           ###   ########.fr        #
+#    Updated: 2026/05/24 18:39:59 by ttsubo           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -33,8 +33,8 @@ $(NAME):$(OBJS)
 $(OBJS_DIR)/%.o:$(SRCS_DIR)/%.cpp | $(OBJS_DIR)
 	$(CPP) $(CPP_FLG) -I $(INCS_DIR) -c $< -o $@
 
-debug:
-	$(MAKE) CPP_FLG="$(CPP_FLG) -DDEBUG" re
+test: all
+	bash ./tests/run_tests.sh
 
 clean:
 	rm -rf $(OBJS)
