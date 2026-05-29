@@ -110,6 +110,24 @@ int main(int argc, char **argv) {
                             std::string cmd;
                             ss >> cmd;
                             std::cout << "Command: " << cmd << std::endl;
+                            if (cmd == "PASS") {
+                                std::string pass;
+                                ss >> pass;
+                                if (pass == password)
+                                    std::cout << "PASS OK" << std::endl;
+                                else
+                                    std::cout << "PASS NG" << std::endl;
+                            }
+                            else if (cmd == "NICK") {
+                                std::string nick;
+                                ss >> nick;
+                                std::cout << "NICK: " << nick << std::endl;
+                            }
+                            else if (cmd == "USER") {
+                                std::string user;
+                                ss >> user;
+                                std::cout << "USER: " << user << std::endl;
+                            }
                         }
                     }
                 }
