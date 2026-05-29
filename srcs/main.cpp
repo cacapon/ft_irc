@@ -55,6 +55,7 @@ int main(int argc, char **argv) {
     std::vector<struct pollfd>  pollfds;
     std::map<int, std::string>  recvBufs;
     std::map<int, std::string>  nicks;
+    std::map<int, std::string>  users;
     std::map<int, bool>         passOk;
     struct pollfd pfd;
     pfd.fd      = serverFd; // 監視するfd
@@ -96,6 +97,7 @@ int main(int argc, char **argv) {
                         close(pollfds[i].fd);
                         recvBufs.erase(pollfds[i].fd);
                         nicks.erase(pollfds[i].fd);
+                        users.erase(pollfds[i].fd);
                         passOk.erase(pollfds[i].fd);
                         pollfds.erase(pollfds.begin() + i);
                         i--;
@@ -113,23 +115,26 @@ int main(int argc, char **argv) {
                             std::istringstream ss(line);
                             std::string cmd;
                             ss >> cmd;
-                            std::cout << "Command: " << cmd << std::endl;
                             if (cmd == "PASS") {
                                 std::string pass;
                                 ss >> pass;
                                 passOk[fd] = (pass == password);
-                                std::cout << "passOk[" << fd << "]:" << passOk[fd] << std::endl;
                             }
                             else if (cmd == "NICK") {
                                 std::string nick;
                                 ss >> nick;
                                 nicks[fd] = nick;
-                                std::cout << "nicks[" << fd << "]:" << nicks[fd] << std::endl;
                             }
                             else if (cmd == "USER") {
                                 std::string user;
                                 ss >> user;
-                                std::cout << "USER: " << user << std::endl;
+                                users[fd] = user;
+
+                                // PASS,NICK,USERが揃ったら001を送る
+                                if (passOk[fd] && !nicks[fd].empty() && !users[fd].empty()) {
+                                    std::string reply = ":server 001 " + nicks[fd] + " :Welcome!\r\n";
+                                    send(fd, reply.c_str(), reply.size(), 0);
+                                }
                             }
                         }
                     }
