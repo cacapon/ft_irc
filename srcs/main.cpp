@@ -52,8 +52,10 @@ int main(int argc, char **argv) {
     }
     std::cout << "Server listening on port " << port << std::endl;
     // ⑥ poll ループ（今は新接続のログだけ）
-    std::vector<struct pollfd> pollfds;
-    std::map<int, std::string> recvBufs;
+    std::vector<struct pollfd>  pollfds;
+    std::map<int, std::string>  recvBufs;
+    std::map<int, std::string>  nicks;
+    std::map<int, bool>         passOk;
     struct pollfd pfd;
     pfd.fd      = serverFd; // 監視するfd
     pfd.events  = POLLIN;   // 監視するイベント（何を待つか）
@@ -93,6 +95,8 @@ int main(int argc, char **argv) {
                         std::cout << "Client disconnected: fd=" << pollfds[i].fd << std::endl;
                         close(pollfds[i].fd);
                         recvBufs.erase(pollfds[i].fd);
+                        nicks.erase(pollfds[i].fd);
+                        passOk.erase(pollfds[i].fd);
                         pollfds.erase(pollfds.begin() + i);
                         i--;
                     }
@@ -113,15 +117,14 @@ int main(int argc, char **argv) {
                             if (cmd == "PASS") {
                                 std::string pass;
                                 ss >> pass;
-                                if (pass == password)
-                                    std::cout << "PASS OK" << std::endl;
-                                else
-                                    std::cout << "PASS NG" << std::endl;
+                                passOk[fd] = (pass == password);
+                                std::cout << "passOk[" << fd << "]:" << passOk[fd] << std::endl;
                             }
                             else if (cmd == "NICK") {
                                 std::string nick;
                                 ss >> nick;
-                                std::cout << "NICK: " << nick << std::endl;
+                                nicks[fd] = nick;
+                                std::cout << "nicks[" << fd << "]:" << nicks[fd] << std::endl;
                             }
                             else if (cmd == "USER") {
                                 std::string user;
