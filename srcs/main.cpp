@@ -8,7 +8,8 @@
 #include <cstring>
 #include <cstdlib>
 #include <vector>
-
+#include <map>
+#include <sstream>
 
 static void usage() {
     std::cout << "Usage: ./ircserv <port> <password>" << std::endl;
@@ -52,6 +53,7 @@ int main(int argc, char **argv) {
     std::cout << "Server listening on port " << port << std::endl;
     // ⑥ poll ループ（今は新接続のログだけ）
     std::vector<struct pollfd> pollfds;
+    std::map<int, std::string> recvBufs;
     struct pollfd pfd;
     pfd.fd      = serverFd; // 監視するfd
     pfd.events  = POLLIN;   // 監視するイベント（何を待つか）
@@ -67,7 +69,7 @@ int main(int argc, char **argv) {
 
         // revents で何が起きたか確認する
         for (size_t i = 0; i < pollfds.size(); i++) {
-            // ビット演算でPOLLINが含まれているかちぇっく
+            // ビット演算でPOLLINが含まれているかチェック
             if (pollfds[i].revents & POLLIN) {
                 if (pollfds[i].fd == serverFd) {
                     int clientFd = accept(serverFd, NULL, NULL);
@@ -79,6 +81,7 @@ int main(int argc, char **argv) {
                         clientPfd.events    = POLLIN;
                         clientPfd.revents   = 0;
                         pollfds.push_back(clientPfd);
+                        recvBufs[clientFd] = "";
                     }
                 }
                 else {
@@ -89,12 +92,25 @@ int main(int argc, char **argv) {
                         // disconnect
                         std::cout << "Client disconnected: fd=" << pollfds[i].fd << std::endl;
                         close(pollfds[i].fd);
+                        recvBufs.erase(pollfds[i].fd);
                         pollfds.erase(pollfds.begin() + i);
                         i--;
                     }
                     else {
-                        buf[bytes] = '\0';
-                        std::cout << "Recieved: " << buf << std::endl;
+                        int fd = pollfds[i].fd;
+                        recvBufs[fd] += std::string(buf, bytes); // バッファ追記
+
+                        // \r\nが見つかるまで1行ずつ取り出す
+                        size_t pos;
+                        while ((pos = recvBufs[fd].find("\r\n")) != std::string::npos) {
+                            std::string line = recvBufs[fd].substr(0, pos);
+                            recvBufs[fd].erase(0, pos + 2);
+                            //std::cout << "Line: " << line << std::endl;
+                            std::istringstream ss(line);
+                            std::string cmd;
+                            ss >> cmd;
+                            std::cout << "Command: " << cmd << std::endl;
+                        }
                     }
                 }
             }
