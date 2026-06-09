@@ -30,4 +30,6 @@ class Client
 	// RecvBufは+=で追記するため、Setterの代わりに以下を使う
 	void appendRecvBuf(const std::string &data);
 	void eraseRecvBuf(size_t len);
+
+	bool isAuthenticated() const;
 };

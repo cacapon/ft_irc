@@ -1,6 +1,6 @@
 #include "Client.hpp"
 
-Client::Client(): _fd(-1), _passOk(false)
+Client::Client() : _fd(-1), _passOk(false)
 {
 }
 Client::Client(int fd) : _fd(fd), _passOk(false)
@@ -32,19 +32,19 @@ int Client::getFd() const
 }
 std::string Client::getNick() const
 {
-	return _nick;
+	return (_nick);
 }
 std::string Client::getUser() const
 {
-	return _user;
+	return (_user);
 }
 bool Client::isPassOk() const
 {
-	return _passOk;
+	return (_passOk);
 }
 std::string Client::getRecvBuf() const
 {
-	return _recvBuf;
+	return (_recvBuf);
 }
 
 void Client::setNick(const std::string &nick)
@@ -68,5 +68,10 @@ void Client::appendRecvBuf(const std::string &data)
 // \r\nの分はメソッド内で消す
 void Client::eraseRecvBuf(size_t pos)
 {
-    _recvBuf.erase(0, pos + 2);
+	_recvBuf.erase(0, pos + 2);
+}
+
+bool Client::isAuthenticated() const
+{
+	return (_passOk && !_nick.empty() && !_user.empty());
 }

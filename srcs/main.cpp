@@ -10,6 +10,7 @@
 #include <vector>
 #include <map>
 #include <sstream>
+#include "Client.hpp"
 
 static void usage() {
     std::cout << "Usage: ./ircserv <port> <password>" << std::endl;
@@ -53,10 +54,7 @@ int main(int argc, char **argv) {
     std::cout << "Server listening on port " << port << std::endl;
     // ⑥ poll ループ（今は新接続のログだけ）
     std::vector<struct pollfd>  pollfds;
-    std::map<int, std::string>  recvBufs;
-    std::map<int, std::string>  nicks;
-    std::map<int, std::string>  users;
-    std::map<int, bool>         passOk;
+    std::map<int, Client> clients;
     struct pollfd pfd;
     pfd.fd      = serverFd; // 監視するfd
     pfd.events  = POLLIN;   // 監視するイベント（何を待つか）
@@ -84,7 +82,7 @@ int main(int argc, char **argv) {
                         clientPfd.events    = POLLIN;
                         clientPfd.revents   = 0;
                         pollfds.push_back(clientPfd);
-                        recvBufs[clientFd] = "";
+                        clients[clientFd] = Client(clientFd);
                     }
                 }
                 else {
@@ -95,22 +93,20 @@ int main(int argc, char **argv) {
                         // disconnect
                         std::cout << "Client disconnected: fd=" << pollfds[i].fd << std::endl;
                         close(pollfds[i].fd);
-                        recvBufs.erase(pollfds[i].fd);
-                        nicks.erase(pollfds[i].fd);
-                        users.erase(pollfds[i].fd);
-                        passOk.erase(pollfds[i].fd);
+                        clients.erase(pollfds[i].fd);
                         pollfds.erase(pollfds.begin() + i);
                         i--;
                     }
                     else {
                         int fd = pollfds[i].fd;
-                        recvBufs[fd] += std::string(buf, bytes); // バッファ追記
+                        Client &client = clients[fd];
+                        client.appendRecvBuf(std::string(buf, bytes));
 
                         // \r\nが見つかるまで1行ずつ取り出す
                         size_t pos;
-                        while ((pos = recvBufs[fd].find("\r\n")) != std::string::npos) {
-                            std::string line = recvBufs[fd].substr(0, pos);
-                            recvBufs[fd].erase(0, pos + 2);
+                        while ((pos = client.getRecvBuf().find("\r\n")) != std::string::npos) {
+                            std::string line = client.getRecvBuf().substr(0, pos);
+                            client.eraseRecvBuf(pos);
                             //std::cout << "Line: " << line << std::endl;
                             std::istringstream ss(line);
                             std::string cmd;
@@ -118,21 +114,21 @@ int main(int argc, char **argv) {
                             if (cmd == "PASS") {
                                 std::string pass;
                                 ss >> pass;
-                                passOk[fd] = (pass == password);
+                                client.setPassOk((pass == password));
                             }
                             else if (cmd == "NICK") {
                                 std::string nick;
                                 ss >> nick;
-                                nicks[fd] = nick;
+                                client.setNick(nick);
                             }
                             else if (cmd == "USER") {
                                 std::string user;
                                 ss >> user;
-                                users[fd] = user;
+                                client.setUser(user);
 
                                 // PASS,NICK,USERが揃ったら001を送る
-                                if (passOk[fd] && !nicks[fd].empty() && !users[fd].empty()) {
-                                    std::string reply = ":server 001 " + nicks[fd] + " :Welcome!\r\n";
+                                if (client.isAuthenticated()) {
+                                    std::string reply = ":server 001 " + client.getNick() + " :Welcome!\r\n";
                                     send(fd, reply.c_str(), reply.size(), 0);
                                 }
                             }
