@@ -126,53 +126,8 @@ bool Server::pollLoop()
                     acceptClient();
                 else
                 {
-                    char buf[512];
-                    int bytes = recv(_pollfds[i].fd, buf, sizeof(buf) - 1, 0);
-                    if (bytes <= 0)
-                    {
-                        disconnectClient(i);
+                    if (receiveData(i))
                         i--;
-                    }
-                    else
-                    {
-                        int fd = _pollfds[i].fd;
-                        Client& client = _clients[fd];
-                        client.appendRecvBuf(std::string(buf, bytes));
-
-                        size_t pos;
-                        while ((pos = client.getRecvBuf().find("\r\n")) != std::string::npos)
-                        {
-                            std::string line = client.getRecvBuf().substr(0, pos);
-                            client.eraseRecvBuf(pos);
-                            std::istringstream ss(line);
-                            std::string cmd;
-                            ss >> cmd;
-                            if (cmd == "PASS")
-                            {
-                                std::string pass;
-                                ss >> pass;
-                                client.setPassOk((pass == _password));
-                            }
-                            else if (cmd == "NICK")
-                            {
-                                std::string nick;
-                                ss >> nick;
-                                client.setNick(nick);
-                            }
-                            else if (cmd == "USER")
-                            {
-                                std::string user;
-                                ss >> user;
-                                client.setUser(user);
-
-                                if (client.isAuthenticated())
-                                {
-                                    std::string reply = ":server 001 " + client.getNick() + " :Welcome!\r\n";
-                                    send(fd, reply.c_str(), reply.size(), 0);
-                                }
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -206,8 +161,8 @@ bool Server::acceptClient()
 
 /**
  * @brief Disconnect client.
- * 
- * @param i 
+ *
+ * @param i
  */
 void Server::disconnectClient(size_t i)
 {
@@ -215,6 +170,65 @@ void Server::disconnectClient(size_t i)
     close(_pollfds[i].fd);
     _clients.erase(_pollfds[i].fd);
     _pollfds.erase(_pollfds.begin() + i);
+}
+
+/**
+ * @brief 
+ * 
+ * @param i 
+ * @return true : disconnected
+ * @return false: continue
+ */
+bool Server::receiveData(size_t i)
+{
+    char buf[512];
+    int bytes = recv(_pollfds[i].fd, buf, sizeof(buf) - 1, 0);
+    if (bytes <= 0)
+    {
+        disconnectClient(i);
+        return true;
+    }
+    else
+    {
+        int fd = _pollfds[i].fd;
+        Client& client = _clients[fd];
+        client.appendRecvBuf(std::string(buf, bytes));
+
+        size_t pos;
+        while ((pos = client.getRecvBuf().find("\r\n")) != std::string::npos)
+        {
+            std::string line = client.getRecvBuf().substr(0, pos);
+            client.eraseRecvBuf(pos);
+            std::istringstream ss(line);
+            std::string cmd;
+            ss >> cmd;
+            if (cmd == "PASS")
+            {
+                std::string pass;
+                ss >> pass;
+                client.setPassOk((pass == _password));
+            }
+            else if (cmd == "NICK")
+            {
+                std::string nick;
+                ss >> nick;
+                client.setNick(nick);
+            }
+            else if (cmd == "USER")
+            {
+                std::string user;
+                ss >> user;
+                client.setUser(user);
+
+                if (client.isAuthenticated())
+                {
+                    std::string reply = ":server 001 " + client.getNick() + " :Welcome!\r\n";
+                    send(fd, reply.c_str(), reply.size(), 0);
+                }
+            }
+        }
+    }
+    return false;
 }
 
 // public

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <poll.h>
+#include <cstddef>
 #include <map>
 #include <string>
 #include <vector>
@@ -27,6 +28,7 @@ private: // Methods
 	// pollLoop Utils.
 	bool acceptClient();
 	void disconnectClient(size_t);
+	bool receiveData(size_t);
 
 public:
     Server();
