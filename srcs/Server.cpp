@@ -10,10 +10,10 @@
 #include <cstdio>
 #include <cstring>
 #include <iostream>
-#include <sstream>
 #include <string>
 
 #include "Client.hpp"
+#include "Commands.hpp"
 
 // private
 
@@ -200,33 +200,7 @@ bool Server::receiveData(size_t i)
         {
             std::string line = client.getRecvBuf().substr(0, pos);
             client.eraseRecvBuf(pos);
-            std::istringstream ss(line);
-            std::string cmd;
-            ss >> cmd;
-            if (cmd == "PASS")
-            {
-                std::string pass;
-                ss >> pass;
-                client.setPassOk((pass == _password));
-            }
-            else if (cmd == "NICK")
-            {
-                std::string nick;
-                ss >> nick;
-                client.setNick(nick);
-            }
-            else if (cmd == "USER")
-            {
-                std::string user;
-                ss >> user;
-                client.setUser(user);
-
-                if (client.isAuthenticated())
-                {
-                    std::string reply = ":server 001 " + client.getNick() + " :Welcome!\r\n";
-                    send(fd, reply.c_str(), reply.size(), 0);
-                }
-            }
+            Commands::dispatch(client, line, _password);
         }
     }
     return false;
