@@ -130,10 +130,7 @@ bool Server::pollLoop()
                     int bytes = recv(_pollfds[i].fd, buf, sizeof(buf) - 1, 0);
                     if (bytes <= 0)
                     {
-                        std::cout << "Client disconnected: fd=" << _pollfds[i].fd << std::endl;
-                        close(_pollfds[i].fd);
-                        _clients.erase(_pollfds[i].fd);
-                        _pollfds.erase(_pollfds.begin() + i);
+                        disconnectClient(i);
                         i--;
                     }
                     else
@@ -205,6 +202,19 @@ bool Server::acceptClient()
         return true;
     }
     return (perror("accept"), false);
+}
+
+/**
+ * @brief Disconnect client.
+ * 
+ * @param i 
+ */
+void Server::disconnectClient(size_t i)
+{
+    std::cout << "Client disconnected: fd=" << _pollfds[i].fd << std::endl;
+    close(_pollfds[i].fd);
+    _clients.erase(_pollfds[i].fd);
+    _pollfds.erase(_pollfds.begin() + i);
 }
 
 // public

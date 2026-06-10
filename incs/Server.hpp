@@ -26,6 +26,7 @@ private: // Methods
 
 	// pollLoop Utils.
 	bool acceptClient();
+	void disconnectClient(size_t);
 
 public:
     Server();
