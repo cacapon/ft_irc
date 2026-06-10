@@ -25,6 +25,9 @@ private: // Methods
     bool startListen();
     bool pollLoop();
 
+	// helper methods
+	void addPollFd(int);
+
 	// pollLoop Utils.
 	bool acceptClient();
 	void disconnectClient(size_t);

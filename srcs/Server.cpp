@@ -103,11 +103,7 @@ bool Server::startListen()
  */
 bool Server::pollLoop()
 {
-    struct pollfd pfd;
-    pfd.fd = _serverFd;
-    pfd.events = POLLIN;
-    pfd.revents = 0;
-    _pollfds.push_back(pfd);
+    addPollFd(_serverFd);
 
     while (true)
     {
@@ -135,6 +131,15 @@ bool Server::pollLoop()
     return true;
 }
 
+void Server::addPollFd(int fd)
+{
+    struct pollfd pfd;
+    pfd.fd = fd;
+    pfd.events = POLLIN;
+    pfd.revents = 0;
+    _pollfds.push_back(pfd);
+}
+
 /**
  * @brief
  *
@@ -148,11 +153,7 @@ bool Server::acceptClient()
     {
         std::cout << "New client connected: fd=" << clientFd << std::endl;
 
-        struct pollfd clientPfd;
-        clientPfd.fd = clientFd;
-        clientPfd.events = POLLIN;
-        clientPfd.revents = 0;
-        _pollfds.push_back(clientPfd);
+        addPollFd(clientFd);
         _clients[clientFd] = Client(clientFd);
         return true;
     }
@@ -173,9 +174,9 @@ void Server::disconnectClient(size_t i)
 }
 
 /**
- * @brief 
- * 
- * @param i 
+ * @brief
+ *
+ * @param i
  * @return true : disconnected
  * @return false: continue
  */
