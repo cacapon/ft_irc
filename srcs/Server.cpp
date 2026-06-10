@@ -97,9 +97,9 @@ bool Server::startListen()
 }
 /**
  * @brief start poll Loop.
- * 
- * @return true 
- * @return false 
+ *
+ * @return true
+ * @return false
  */
 bool Server::pollLoop()
 {
@@ -123,20 +123,7 @@ bool Server::pollLoop()
             if (_pollfds[i].revents & POLLIN)
             {
                 if (_pollfds[i].fd == _serverFd)
-                {
-                    int clientFd = accept(_serverFd, NULL, NULL);
-                    if (clientFd >= 0)
-                    {
-                        std::cout << "New client connected: fd=" << clientFd << std::endl;
-
-                        struct pollfd clientPfd;
-                        clientPfd.fd = clientFd;
-                        clientPfd.events = POLLIN;
-                        clientPfd.revents = 0;
-                        _pollfds.push_back(clientPfd);
-                        _clients[clientFd] = Client(clientFd);
-                    }
-                }
+                    acceptClient();
                 else
                 {
                     char buf[512];
@@ -194,6 +181,30 @@ bool Server::pollLoop()
         }
     }
     return true;
+}
+
+/**
+ * @brief
+ *
+ * @return true
+ * @return false
+ */
+bool Server::acceptClient()
+{
+    int clientFd = accept(_serverFd, NULL, NULL);
+    if (clientFd >= 0)
+    {
+        std::cout << "New client connected: fd=" << clientFd << std::endl;
+
+        struct pollfd clientPfd;
+        clientPfd.fd = clientFd;
+        clientPfd.events = POLLIN;
+        clientPfd.revents = 0;
+        _pollfds.push_back(clientPfd);
+        _clients[clientFd] = Client(clientFd);
+        return true;
+    }
+    return (perror("accept"), false);
 }
 
 // public

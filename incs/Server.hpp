@@ -24,6 +24,9 @@ private: // Methods
     bool startListen();
     bool pollLoop();
 
+	// pollLoop Utils.
+	bool acceptClient();
+
 public:
     Server();
 	Server(int, const std::string&);
