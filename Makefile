@@ -6,7 +6,7 @@
 #    By: ttsubo <ttsubo@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/07/13 12:46:57 by ttsubo            #+#    #+#              #
-#    Updated: 2026/05/24 18:39:59 by ttsubo           ###   ########.fr        #
+#    Updated: 2026/05/29 20:57:22 by ttsubo           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -18,7 +18,7 @@ SRCS_DIR = srcs
 INCS_DIR = incs
 OBJS_DIR = objs
 
-SRC 	= main.cpp
+SRC 	= main.cpp Server.cpp Client.cpp Commands.cpp
 SRCS	= $(addprefix $(SRCS_DIR)/, $(SRC)) 
 OBJS 	= $(SRCS:$(SRCS_DIR)/%.cpp=$(OBJS_DIR)/%.o)
 
