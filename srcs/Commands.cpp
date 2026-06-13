@@ -68,16 +68,28 @@ Message Commands::parseLine(const std::string &line) {
 
 void Commands::handlePass(Client& client,  std::vector<std::string>& params, const std::string& password)
 {
+	if (params.empty())
+	{
+		return;
+	}
     std::string pass = params[0];
     client.setPassOk((pass == password));
 }
 void Commands::handleNick(Client& client, std::vector<std::string>& params)
 {
+	if (params.empty())
+	{
+		return;
+	}
     std::string nick = params[0];
     client.setNick(nick);
 }
 void Commands::handleUser(Client& client, std::vector<std::string>& params)
 {
+	if (params.empty())
+	{
+		return; 
+	}
     std::string user = params[0];
     client.setUser(user);
 
