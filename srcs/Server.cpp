@@ -240,6 +240,8 @@ Server::~Server()
 
 void Server::run()
 {
+    //切断済ソケットにsendすると、OSがプロセスをkillするため、サーバーを動かし続けるためにSIGPIPEを無視
+    signal(SIGPIPE,SIG_IGN);
     if (!makeSocket())
         return;
     if (!addressRecycle())
