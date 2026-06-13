@@ -1,5 +1,5 @@
 #!/bin/bash
-source tests/test_helper.sh
+source tests/Integration/test_helper.sh
 
 check "引数なしでUsage表示" "Usage: ./ircserv <port> <password>" "$(./ircserv 2>&1)"
 check "引数1つでUsage表示" "Usage: ./ircserv <port> <password>" "$(./ircserv 6667 2>&1)"

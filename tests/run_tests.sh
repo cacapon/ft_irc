@@ -1,5 +1,5 @@
 #!/bin/bash
-source tests/test_helper.sh
+source tests/Integration/test_helper.sh
 
 TOTAL_FAIL=0
 
@@ -21,9 +21,16 @@ fi
 echo "OK: コンパイル"
 echo ""
 
-# テスト実行
-run tests/test_main.sh
-# run tests/test_auth.sh  ← 増えたら追加
+# 単体テスト実行
+make unit_test
+if [ $? -ne 0 ]; then
+    TOTAL_FAIL=$((TOTAL_FAIL + 1))
+fi
+echo ""
+
+# 統合テスト実行
+run tests/Integration/test_main.sh
+# run tests/Integration/test_auth.sh  ← 増えたら追加
 
 # 総合結果
 echo "================================"
