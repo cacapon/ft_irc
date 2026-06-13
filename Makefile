@@ -36,13 +36,23 @@ $(OBJS_DIR)/%.o:$(SRCS_DIR)/%.cpp | $(OBJS_DIR)
 test: all
 	bash ./tests/run_tests.sh
 
+UNIT_TEST_DIR	= tests/unit
+UNIT_TEST_BIN	= unit_tests
+UNIT_TEST_SRCS	= $(UNIT_TEST_DIR)/test_main.cpp $(UNIT_TEST_DIR)/test_parse.cpp
+UNIT_SRCS		= $(SRCS_DIR)/Commands.cpp $(SRCS_DIR)/Client.cpp
+
+unit_test:
+	$(CPP) $(CPP_FLG) -I $(INCS_DIR) -I $(UNIT_TEST_DIR) $(UNIT_TEST_SRCS) $(UNIT_SRCS) -o $(UNIT_TEST_BIN)
+	./$(UNIT_TEST_BIN)
+
 clean:
 	rm -rf $(OBJS)
 	rm -rf $(OBJS_DIR)
+	rm -f $(UNIT_TEST_BIN)
 
 fclean: clean
 	rm -rf $(NAME)
 
 re: fclean all
 
-.PHONY: all clean fclean re debug
+.PHONY: all clean fclean re debug test unit_test

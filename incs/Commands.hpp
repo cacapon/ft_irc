@@ -18,12 +18,11 @@ private:  // Methods
     Commands& operator=(const Commands&);
     ~Commands();
 
-	static Message parseLine(const std::string&);
-
     static void handlePass(Client&, std::vector<std::string>&, const std::string&);
     static void handleNick(Client&, std::vector<std::string>&);
     static void handleUser(Client&, std::vector<std::string>&);
 
 public:
+    static Message parseLine(const std::string&);
     static void dispatch(Client&, const std::string&, const std::string&);
 };
