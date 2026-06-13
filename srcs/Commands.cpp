@@ -37,8 +37,16 @@ Message Commands::parseLine(const std::string &line) {
 	if (!line.empty() && line[0] == ':')
 	{
 		size_t end = line.find(' ');
-		msg.prefix = line.substr(1, end -1);
-		pos = end +1;
+		if (end == std::string::npos)
+		{
+			msg.prefix = line.substr(1);
+			pos = line.size();
+		}
+		else
+		{
+			msg.prefix = line.substr(1, end -1);
+			pos = end + 1;
+		}
 	}
 
 	// get command
