@@ -14,6 +14,7 @@
 
 #include "Client.hpp"
 #include "Commands.hpp"
+#include "Channel.hpp"
 
 // private
 
@@ -200,7 +201,7 @@ bool Server::receiveData(size_t i)
         {
             std::string line = client.getRecvBuf().substr(0, pos);
             client.eraseRecvBuf(pos);
-            Commands::dispatch(client, line, _password);
+            Commands::dispatch(*this, client, line);
         }
     }
     return false;
@@ -250,4 +251,31 @@ void Server::run()
     if (!startListen())
         return;
     pollLoop();
+}
+
+//ブロードキャスト通知
+//getter
+std::map<int, Client>& Server::getClients(){
+    return _clients;
+}
+
+std::map<std::string, Channel>& Server::getChannels(){
+    return _channels;
+}
+
+const std::string& Server::getPassword() const{
+    return _password;
+}
+
+
+void Server::sendToFd(int fd, const std::string& msg){
+    send(fd, msg.c_str(), msg.size(), 0);
+}
+
+void Server::sendToChannel(const Channel& ch, const std::string& msg){
+    const std::set<int>& members = ch.getMembers();
+    //チャンネル全員のfdを取得し、forで全員にmsgを送信する
+    for(std::set<int>::const_iterator it = members.begin(); it != members.end(); ++it){
+        sendToFd(*it, msg);
+    }
 }

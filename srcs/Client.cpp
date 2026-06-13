@@ -75,3 +75,8 @@ bool Client::isAuthenticated() const
 {
 	return (_passOk && !_nick.empty() && !_user.empty());
 }
+
+std::string Client::getPrefix() const{
+//irssiは厳密にホスト名を見ているわけではないのでlocalhostにしている（要相談）
+    return _nick + "!" + _user + "@localhost";
+}

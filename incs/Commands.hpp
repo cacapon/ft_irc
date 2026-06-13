@@ -3,6 +3,7 @@
 #include <string>
 
 #include "Client.hpp"
+#include "Server.hpp"
 
 class Commands
 {
@@ -16,6 +17,9 @@ private:  // Methods
     static void handleNick(Client&, std::istringstream&);
     static void handleUser(Client&, std::istringstream&);
 
+    //JOIN
+    static void handleJoin(Server&, Client&, std::istringstream&);
+
 public:
-    static void dispatch(Client&, const std::string&, const std::string&);
+    static void dispatch(Server&, Client&, const std::string&);
 };
