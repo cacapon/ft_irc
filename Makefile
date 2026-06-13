@@ -38,7 +38,7 @@ test: all
 
 UNIT_TEST_DIR	= tests/unit
 UNIT_TEST_BIN	= unit_tests
-UNIT_TEST_SRCS	= $(UNIT_TEST_DIR)/test_main.cpp $(UNIT_TEST_DIR)/test_parse.cpp
+UNIT_TEST_SRCS	= $(UNIT_TEST_DIR)/test_main.cpp $(UNIT_TEST_DIR)/test_parse.cpp $(UNIT_TEST_DIR)/test_replies.cpp
 UNIT_SRCS		= $(SRCS_DIR)/Commands.cpp $(SRCS_DIR)/Client.cpp
 
 unit_test:
