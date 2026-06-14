@@ -36,3 +36,8 @@ const std::string& Channel::getTopic() const{
 const std::string& Channel::getName() const{
       return this->_name;
 }
+
+void Channel::removeMember(int fd){
+    _members.erase(fd);
+    _operators.erase(fd);
+}
