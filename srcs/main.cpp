@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include "Server.hpp"
+#include <cstdlib>
 
 static void usage() {
     std::cout << "Usage: ./ircserv <port> <password>" << std::endl;
