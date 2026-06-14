@@ -24,7 +24,7 @@ private:  // Methods
     static void handleUser(Client&, std::vector<std::string>&);
 
     //JOIN
-    static void handleJoin(Server&, Client&, std::istringstream&);
+    static void handleJoin(Server&, Client&, std::vector<std::string>&);
 
 public:
     static void dispatch(Server&, Client&, const std::string&);

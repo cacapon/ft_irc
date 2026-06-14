@@ -1,2 +1,2 @@
 CompileFlags:
-  Add: [-std=c++98, -Iincs, -Wall, -Wextra]
+  Add: [-std=c++98, -I../incs, -I../../incs, -Wall, -Wextra]

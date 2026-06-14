@@ -6,7 +6,7 @@
 #    By: ttsubo <ttsubo@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/07/13 12:46:57 by ttsubo            #+#    #+#              #
-#    Updated: 2026/05/29 20:57:22 by ttsubo           ###   ########.fr        #
+#    Updated: 2026/06/14 09:57:24 by ttsubo           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -39,7 +39,7 @@ test: all
 UNIT_TEST_DIR	= tests/unit
 UNIT_TEST_BIN	= unit_tests
 UNIT_TEST_SRCS	= $(UNIT_TEST_DIR)/test_main.cpp $(UNIT_TEST_DIR)/test_parse.cpp $(UNIT_TEST_DIR)/test_replies.cpp
-UNIT_SRCS		= $(SRCS_DIR)/Commands.cpp $(SRCS_DIR)/Client.cpp
+UNIT_SRCS		= $(SRCS_DIR)/Commands.cpp $(SRCS_DIR)/Client.cpp $(SRCS_DIR)/Channel.cpp $(SRCS_DIR)/Server.cpp
 
 unit_test:
 	$(CPP) $(CPP_FLG) -I $(INCS_DIR) -I $(UNIT_TEST_DIR) $(UNIT_TEST_SRCS) $(UNIT_SRCS) -o $(UNIT_TEST_BIN)

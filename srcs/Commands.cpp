@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <string>
 #include <vector>
+#include "Replies.hpp"
 
 // private
 Commands::Commands()
@@ -107,21 +108,19 @@ void Commands::handleUser(Client& client, std::vector<std::string>& params)
     }
 }
 
-void Commands::handleJoin(Server& srv, Client& client, std::istringstream& ss){
+void Commands::handleJoin(Server& srv, Client& client, std::vector<std::string>& params){
     //未認証なら無視
     if(!client.isAuthenticated()){
         return ;
     }
+    //chanNameがなければ461(ERR_NEEDMOREPARAMS)をclientに送ってreturn
+	if(params.empty()){
+		srv.sendToFd(client.getFd(), Replies::ERR_NEEDMOREPARAMS(client.getNick(), "JOIN"));
+		return ;
+	}
 
     //チャンネル名を1つ読む
-    std::string chanName;
-    ss >> chanName;
-
-    //chanNameがなければ461(ERR_NEEDMOREPARAMS)をclientに送ってreturn
-    if(chanName.empty()) {
-        //ERR_NEEDMOREPARAMS)
-        return ;
-    }
+    std::string chanName = params[0];
 
     //名前検証(正しくなければERR_BADCHANMASK)
     if(chanName[0] != '#' && chanName[0] != '&') {
@@ -169,6 +168,6 @@ void Commands::dispatch(Server& srv, Client& client, const std::string& line)
         handleNick(client, msg.params);
     else if (msg.command == "USER")
         handleUser(client, msg.params);
-    else if (cmd == "JOIN")
-        handleJoin(srv, client, ss);
+    else if (msg.command == "JOIN")
+        handleJoin(srv, client, msg.params);
 }
