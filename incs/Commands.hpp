@@ -22,9 +22,8 @@ private:  // Methods
     static void handlePass(Client&, std::vector<std::string>&, const std::string&);
     static void handleNick(Client&, std::vector<std::string>&);
     static void handleUser(Client&, std::vector<std::string>&);
-
-    //JOIN
     static void handleJoin(Server&, Client&, std::vector<std::string>&);
+	static void handlePrivmsg(Server&, Client&, std::vector<std::string>&);
 
 public:
     static void dispatch(Server&, Client&, const std::string&);
