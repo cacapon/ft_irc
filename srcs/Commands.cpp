@@ -177,7 +177,6 @@ void Commands::handlePrivmsg(Server& srv, Client& client, std::vector<std::strin
 
     // check target
     std::string target = params[0];
-    // TODO:params[0]自体のNULLチェックが必要 
     bool target_is_channel = (target[0] == '#' || target[0] == '&');
     if (target_is_channel) {
         // send to channel
