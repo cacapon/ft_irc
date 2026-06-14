@@ -32,4 +32,7 @@ class Client
 	void eraseRecvBuf(size_t len);
 
 	bool isAuthenticated() const;
+
+    //参加メッセージにPrefixを表示させる用
+    std::string getPrefix() const;
 };

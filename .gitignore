@@ -115,3 +115,9 @@ $RECYCLE.BIN/
 ircserv
 unit_tests
 .cache
+
+# editor / tooling
+.serena/
+.claude/
+.vscode/
+*.swp

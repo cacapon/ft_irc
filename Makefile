@@ -18,7 +18,7 @@ SRCS_DIR = srcs
 INCS_DIR = incs
 OBJS_DIR = objs
 
-SRC 	= main.cpp Server.cpp Client.cpp Commands.cpp
+SRC 	= main.cpp Server.cpp Client.cpp Commands.cpp Channel.cpp
 SRCS	= $(addprefix $(SRCS_DIR)/, $(SRC)) 
 OBJS 	= $(SRCS:$(SRCS_DIR)/%.cpp=$(OBJS_DIR)/%.o)
 

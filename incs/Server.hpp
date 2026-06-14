@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "Client.hpp"
+#include "Channel.hpp"
 
 class Server
 {
@@ -16,6 +17,7 @@ private: // Properties
     std::string _password;
     std::vector<struct pollfd> _pollfds;
     std::map<int, Client> _clients;
+    std::map<std::string, Channel> _channels;
 
 private: // Methods
     bool makeSocket();
@@ -40,4 +42,14 @@ public:
     Server& operator=(const Server&);
     ~Server();
     void run();
+
+    //ブロードキャストでチャンネル全体に通知する関数
+    //getter
+    std::map<int, Client>& getClients();
+    std::map<std::string, Channel>& getChannels();
+    const std::string& getPassword() const;
+
+    void sendToFd(int fd, const std::string& msg);
+    void sendToChannel(const Channel& ch, const std::string& msg);
+
 };
