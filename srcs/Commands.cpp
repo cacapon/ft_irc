@@ -195,6 +195,7 @@ void Commands::handlePrivmsg(Server& srv, Client& client, std::vector<std::strin
         }
         std::string msg = ":" + client.getPrefix() + " PRIVMSG " + target + " :" + params[1] + "\r\n";
         srv.sendToChannel(ch, msg, client.getFd());
+        return ;
     }
     else {
         // send to nick
