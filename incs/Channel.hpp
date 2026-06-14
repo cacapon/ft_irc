@@ -26,6 +26,8 @@ public:
     const std::set<int>& getMembers() const;
     const std::string& getTopic() const;
     const std::string& getName() const;
+
+    void removeMember(int fd);
 };
 
 #endif
