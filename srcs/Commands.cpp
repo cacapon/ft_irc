@@ -123,10 +123,19 @@ void Commands::handleJoin(Server& srv, Client& client, std::vector<std::string>&
     //チャンネル名を1つ読む
     std::string chanName = params[0];
 
-    //名前検証(正しくなければERR_BADCHANMASK)
-    if(chanName[0] != '#' && chanName[0] != '&') {
-        //ERR_BADCHANMASK
+    //名前検証
+    //先頭が#, & 以外　OR　チャンネル名が1文字もない　(ERR_NOSUCHCHANNEL)
+    if(chanName.size() < 2 || (chanName[0] != '#' && chanName[0] != '&')) {
+        srv.sendToFd(client.getFd(), Replies::ERR_NOSUCHCHANNEL(client.getNick(), chanName));
         return ;
+    }
+    //チャンネル名に使われている文字が正しいか
+    for(size_t i = 0; i < chanName.size(); ++i){
+        char c = chanName[i];
+        if(c == ' ' || c == ',' || c == '\a') {
+            srv.sendToFd(client.getFd(), Replies::ERR_NOSUCHCHANNEL(client.getNick(), chanName));
+            return ;
+        }
     }
 
     //チャンネルを探す/作る
@@ -152,9 +161,9 @@ void Commands::handleJoin(Server& srv, Client& client, std::vector<std::string>&
     
     //topic
     if(!ch.getTopic().empty()){
-        // 332 RPL_TOPIC
+        srv.sendToFd(client.getFd(), Replies::RPL_TOPIC(client.getNick(), chanName, ch.getTopic()));
     }else {
-        //331 RPL_NOTOPIC
+        srv.sendToFd(client.getFd(), Replies::RPL_NOTOPIC(client.getNick(), chanName));
     }
     return ;
 }
