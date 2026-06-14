@@ -50,6 +50,6 @@ public:
     const std::string& getPassword() const;
 
     void sendToFd(int fd, const std::string& msg);
-    void sendToChannel(const Channel& ch, const std::string& msg);
+    void sendToChannel(const Channel& ch, const std::string& msg, int excludeFd = -1);
 
 };

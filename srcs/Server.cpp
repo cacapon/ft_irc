@@ -275,10 +275,12 @@ void Server::sendToFd(int fd, const std::string& msg){
     send(fd, msg.c_str(), msg.size(), 0);
 }
 
-void Server::sendToChannel(const Channel& ch, const std::string& msg){
+void Server::sendToChannel(const Channel& ch, const std::string& msg, int excludeFd){
     const std::set<int>& members = ch.getMembers();
     //チャンネル全員のfdを取得し、forで全員にmsgを送信する
     for(std::set<int>::const_iterator it = members.begin(); it != members.end(); ++it){
+        if (*it == excludeFd)
+            continue;
         sendToFd(*it, msg);
     }
 }
