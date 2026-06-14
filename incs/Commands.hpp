@@ -24,6 +24,7 @@ private:  // Methods
     static void handleUser(Client&, std::vector<std::string>&);
     static void handleJoin(Server&, Client&, std::vector<std::string>&);
 	static void handlePrivmsg(Server&, Client&, std::vector<std::string>&);
+    static void handlePart(Server&, Client&, std::vector<std::string>&);
 
 public:
     static void dispatch(Server&, Client&, const std::string&);
