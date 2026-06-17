@@ -1,0 +1,31 @@
+#!/bin/sh
+#
+# ステージされた C/C++ ファイルが .clang-format に従っているかチェックする。
+# 整形が必要な場合はコミットを中止する。
+
+files=$(git diff --cached --name-only --diff-filter=ACMR -- '*.cpp' '*.hpp' '*.h')
+
+if [ -z "$files" ]; then
+	exit 0
+fi
+
+if ! command -v clang-format >/dev/null 2>&1; then
+	echo "clang-format が見つかりません。インストールしてください。" >&2
+	exit 1
+fi
+
+failed=0
+for f in $files; do
+	if ! clang-format --dry-run -Werror "$f" >/dev/null 2>&1; then
+		echo "clang-format: $f は整形が必要です" >&2
+		failed=1
+	fi
+done
+
+if [ "$failed" -ne 0 ]; then
+	echo "" >&2
+	echo "コミット前に 'make format' を実行してください。" >&2
+	exit 1
+fi
+
+exit 0

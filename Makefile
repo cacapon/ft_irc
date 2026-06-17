@@ -55,4 +55,13 @@ fclean: clean
 
 re: fclean all
 
-.PHONY: all clean fclean re debug test unit_test
+FORMAT_TARGETS	= $(shell find srcs incs tests -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" \))
+
+format:
+	clang-format -i $(FORMAT_TARGETS)
+
+setup-hooks:
+	git config core.hooksPath .githooks
+	chmod +x .githooks/*
+
+.PHONY: all clean fclean re debug test unit_test format setup-hooks
