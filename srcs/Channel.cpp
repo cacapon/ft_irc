@@ -102,19 +102,19 @@ const std::string& Channel::getName() const
 }
 bool Channel::isInviteOnly() const
 {
-    return _inviteOnly;
+    return this->_inviteOnly;
 }
 bool Channel::isTopicRestricted() const
 {
-    return _topicRestricted;
+    return this->_topicRestricted;
 }
 int Channel::getLimit() const
 {
-    return _limit;
+    return this->_limit;
 }
 const std::string& Channel::getKey() const
 {
-    return _key;
+    return this->_key;
 }
 
 // setters
