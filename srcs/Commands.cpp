@@ -1,13 +1,26 @@
 #include "Commands.hpp"
 
 #include <sys/socket.h>
+
 #include <cstddef>
 #include <string>
 #include <vector>
+
 #include "Channel.hpp"
 #include "Client.hpp"
 #include "Replies.hpp"
 #include "Server.hpp"
+
+// helper
+void Commands::recordAppliedMode(std::string& appliedModes, char& lastSign, char modeChar, bool adding)
+{
+    if (lastSign != (adding ? '+' : '-'))
+    {
+        appliedModes += (adding ? '+' : '-');
+        lastSign = adding ? '+' : '-';
+    }
+    appliedModes += modeChar;
+}
 
 // private
 Commands::Commands()
@@ -27,80 +40,86 @@ Commands::~Commands()
 }
 
 /**
- * @brief In accordance with the IRC2810-2.3.1 specifications, 
+ * @brief In accordance with the IRC2810-2.3.1 specifications,
 the command is parsed into prefix, command, and params.
- * 
- * @param line 
- * @return Message 
+ *
+ * @param line
+ * @return Message
  */
-Message Commands::parseLine(const std::string &line) {
-	Message msg;
-	size_t pos = 0;
+Message Commands::parseLine(const std::string& line)
+{
+    Message msg;
+    size_t pos = 0;
 
-	// get prefix
-	if (!line.empty() && line[0] == ':')
-	{
-		size_t end = line.find(' ');
-		if (end == std::string::npos)
-		{
-			msg.prefix = line.substr(1);
-			pos = line.size();
-		}
-		else
-		{
-			msg.prefix = line.substr(1, end -1);
-			pos = end + 1;
-		}
-	}
+    // get prefix
+    if (!line.empty() && line[0] == ':')
+    {
+        size_t end = line.find(' ');
+        if (end == std::string::npos)
+        {
+            msg.prefix = line.substr(1);
+            pos = line.size();
+        }
+        else
+        {
+            msg.prefix = line.substr(1, end - 1);
+            pos = end + 1;
+        }
+    }
 
-	// get command
-	while (pos < line.size() && line[pos] == ' ') pos++;
-	size_t start = pos;
-	while (pos < line.size() && line[pos] != ' ') pos++;
-	msg.command = line.substr(start, pos - start);
+    // get command
+    while (pos < line.size() && line[pos] == ' ')
+        pos++;
+    size_t start = pos;
+    while (pos < line.size() && line[pos] != ' ')
+        pos++;
+    msg.command = line.substr(start, pos - start);
 
-	// get params
-	while (pos < line.size()) 
-	{
-		while (pos < line.size() && line[pos] == ' ') pos++;
-		if (pos >= line.size()) break;
+    // get params
+    while (pos < line.size())
+    {
+        while (pos < line.size() && line[pos] == ' ')
+            pos++;
+        if (pos >= line.size())
+            break;
 
-		if (line[pos] == ':')
-		{
-			msg.params.push_back(line.substr(pos + 1));
-			break;
-		}
-		start = pos;
-		while (pos < line.size() && line[pos] != ' ') pos++;
-		msg.params.push_back(line.substr(start, pos - start));
-	}
-	return msg;
+        if (line[pos] == ':')
+        {
+            msg.params.push_back(line.substr(pos + 1));
+            break;
+        }
+        start = pos;
+        while (pos < line.size() && line[pos] != ' ')
+            pos++;
+        msg.params.push_back(line.substr(start, pos - start));
+    }
+    return msg;
 }
 
-void Commands::handlePass(Client& client,  std::vector<std::string>& params, const std::string& password)
+void Commands::handlePass(Client& client, std::vector<std::string>& params, const std::string& password)
 {
-	if (params.empty())
-	{
-		return;
-	}
+    if (params.empty())
+    {
+        return;
+    }
     std::string pass = params[0];
     client.setPassOk((pass == password));
 }
 void Commands::handleNick(Client& client, std::vector<std::string>& params)
 {
-	if (params.empty())
-	{
-		return;
-	}
+    if (params.empty())
+    {
+        return;
+    }
     std::string nick = params[0];
     client.setNick(nick);
 }
 void Commands::handleUser(Client& client, std::vector<std::string>& params)
 {
-	if (params.empty())
-	{
-		return; 
-	}
+    if (params.empty())
+    {
+        return;
+    }
     std::string user = params[0];
     client.setUser(user);
 
@@ -111,173 +130,355 @@ void Commands::handleUser(Client& client, std::vector<std::string>& params)
     }
 }
 
-void Commands::handleJoin(Server& srv, Client& client, std::vector<std::string>& params){
-    //未認証なら無視
-    if(!client.isAuthenticated()){
+void Commands::handleJoin(Server& srv, Client& client, std::vector<std::string>& params)
+{
+    // 未認証なら無視
+    if (!client.isAuthenticated())
+    {
         srv.sendToFd(client.getFd(), Replies::ERR_NOTREGISTERED(client.getNick()));
-        return ;
+        return;
     }
-    //chanNameがなければ461(ERR_NEEDMOREPARAMS)をclientに送ってreturn
-	if(params.empty()){
-		srv.sendToFd(client.getFd(), Replies::ERR_NEEDMOREPARAMS(client.getNick(), "JOIN"));
-		return ;
-	}
+    // chanNameがなければ461(ERR_NEEDMOREPARAMS)をclientに送ってreturn
+    if (params.empty())
+    {
+        srv.sendToFd(client.getFd(), Replies::ERR_NEEDMOREPARAMS(client.getNick(), "JOIN"));
+        return;
+    }
 
-    //チャンネル名を1つ読む
+    // チャンネル名を1つ読む
     std::string chanName = params[0];
 
-    //名前検証
-    //先頭が#, & 以外　OR　チャンネル名が1文字もない　(ERR_NOSUCHCHANNEL)
-    if(chanName.size() < 2 || (chanName[0] != '#' && chanName[0] != '&')) {
+    // 名前検証
+    // 先頭が#, & 以外　OR　チャンネル名が1文字もない　(ERR_NOSUCHCHANNEL)
+    if (chanName.size() < 2 || (chanName[0] != '#' && chanName[0] != '&'))
+    {
         srv.sendToFd(client.getFd(), Replies::ERR_NOSUCHCHANNEL(client.getNick(), chanName));
-        return ;
+        return;
     }
-    //チャンネル名に使われている文字が正しいか
-    for(size_t i = 0; i < chanName.size(); ++i){
+    // チャンネル名に使われている文字が正しいか
+    for (size_t i = 0; i < chanName.size(); ++i)
+    {
         char c = chanName[i];
-        if(c == ' ' || c == ',' || c == '\a') {
+        if (c == ' ' || c == ',' || c == '\a')
+        {
             srv.sendToFd(client.getFd(), Replies::ERR_NOSUCHCHANNEL(client.getNick(), chanName));
-            return ;
+            return;
         }
     }
 
-    //チャンネルを探す/作る
+    // チャンネルを探す/作る
     std::map<std::string, Channel>& channels = srv.getChannels();
-    if(channels.find(chanName) == channels.end()){
-        //ない場合は新規作成
+    if (channels.find(chanName) == channels.end())
+    {
+        // ない場合は新規作成
         Channel& ch = channels.insert(std::make_pair(chanName, Channel(chanName))).first->second;
         ch.addMember(client.getFd());
         ch.addOperator(client.getFd());
-    }else{
+    }
+    else
+    {
         Channel& ch = channels[chanName];
-        //すでにメンバーならreturn
-        if(ch.isMember(client.getFd())){
-            return ;
+        // すでにメンバーならreturn
+        if (ch.isMember(client.getFd()))
+        {
+            return;
         }
         ch.addMember(client.getFd());
     }
-    //ここで改めて ch を取得（もう必ず存在する）
+    // ここで改めて ch を取得（もう必ず存在する）
     Channel& ch = channels[chanName];
-    //参加成功時のメッセージ
+    // 参加成功時のメッセージ
     std::string joinMsg = ":" + client.getPrefix() + " JOIN " + chanName + "\r\n";
-    srv.sendToChannel(ch,joinMsg);
-    
-    //topic
-    if(!ch.getTopic().empty()){
+    srv.sendToChannel(ch, joinMsg);
+
+    // topic
+    if (!ch.getTopic().empty())
+    {
         srv.sendToFd(client.getFd(), Replies::RPL_TOPIC(client.getNick(), chanName, ch.getTopic()));
-    }else {
+    }
+    else
+    {
         srv.sendToFd(client.getFd(), Replies::RPL_NOTOPIC(client.getNick(), chanName));
     }
-    return ;
+    return;
 }
 
-void Commands::handlePrivmsg(Server& srv, Client& client, std::vector<std::string>& params){
+void Commands::handlePrivmsg(Server& srv, Client& client, std::vector<std::string>& params)
+{
     // validate
-    if(!client.isAuthenticated())
-        return ;
-    if(params.empty()) {
+    if (!client.isAuthenticated())
+        return;
+    if (params.empty())
+    {
         srv.sendToFd(client.getFd(), Replies::ERR_NORECIPIENT(client.getNick(), "PRIVMSG"));
-        return ;
+        return;
     }
-    if (params.size() < 2 || params[1] == "") {
+    if (params.size() < 2 || params[1] == "")
+    {
         srv.sendToFd(client.getFd(), Replies::ERR_NOTEXTTOSEND(client.getNick()));
-        return ;
+        return;
     }
 
     // check target
     std::string target = params[0];
     bool target_is_channel = (target[0] == '#' || target[0] == '&');
-    if (target_is_channel) {
+    if (target_is_channel)
+    {
         // send to channel
         std::map<std::string, Channel>& channels = srv.getChannels();
         std::map<std::string, Channel>::iterator it = channels.find(target);
-        
-        if (it == channels.end()) {
+
+        if (it == channels.end())
+        {
             srv.sendToFd(client.getFd(), Replies::ERR_NOSUCHNICK(client.getNick(), target));
-            return ;
+            return;
         }
 
         Channel& ch = it->second;
-        if (!ch.isMember(client.getFd())) {
+        if (!ch.isMember(client.getFd()))
+        {
             srv.sendToFd(client.getFd(), Replies::ERR_CANNOTSENDTOCHAN(client.getNick(), target));
-            return ;
+            return;
         }
         std::string msg = ":" + client.getPrefix() + " PRIVMSG " + target + " :" + params[1] + "\r\n";
         srv.sendToChannel(ch, msg, client.getFd());
-        return ;
+        return;
     }
-    else {
+    else
+    {
         // send to nick
         std::map<int, Client>& clients = srv.getClients();
-        for(std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it){
+        for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
+        {
             if (it->second.getNick() == target)
             {
                 std::string msg = ":" + client.getPrefix() + " PRIVMSG " + target + " :" + params[1] + "\r\n";
                 srv.sendToFd(it->second.getFd(), msg);
-                return ;
+                return;
             }
         }
     }
     srv.sendToFd(client.getFd(), Replies::ERR_NOSUCHNICK(client.getNick(), target));
 }
 
-void Commands::handlePart(Server& srv, Client& client,std::vector<std::string>& params){
-    //未認証なら無視
-    if(!client.isAuthenticated()){
+void Commands::handlePart(Server& srv, Client& client, std::vector<std::string>& params)
+{
+    // 未認証なら無視
+    if (!client.isAuthenticated())
+    {
         srv.sendToFd(client.getFd(), Replies::ERR_NOTREGISTERED(client.getNick()));
-        return ;
+        return;
     }
-    
-    //paramsが空なら 461 ERR_NEEDMOREPARAMS を返す
-    if(params.empty()){
+
+    // paramsが空なら 461 ERR_NEEDMOREPARAMS を返す
+    if (params.empty())
+    {
         srv.sendToFd(client.getFd(), Replies::ERR_NEEDMOREPARAMS(client.getNick(), "PART"));
-        return ;
+        return;
     }
 
     std::string chanName = params[0];
     std::string reason;
-    //パラメータがあれば理由の文章も
-    if(params.size() > 1){
+    // パラメータがあれば理由の文章も
+    if (params.size() > 1)
+    {
         reason = params[1];
-    } else {
+    }
+    else
+    {
         reason = "";
     }
 
-    //チャンネルを探す
+    // チャンネルを探す
     std::map<std::string, Channel>& channels = srv.getChannels();
-    if(channels.find(chanName) == channels.end()){
-        //なければ　403エラーを送る
+    if (channels.find(chanName) == channels.end())
+    {
+        // なければ　403エラーを送る
         srv.sendToFd(client.getFd(), Replies::ERR_NOSUCHCHANNEL(client.getNick(), chanName));
-        return ;
-    } 
-    
-    Channel& ch = channels[chanName];
-
-    //そのチャンネルのメンバーかチェック
-    if(!(ch.isMember(client.getFd()))){
-        srv.sendToFd(client.getFd(), Replies::ERR_NOTONCHANNEL(client.getNick(), chanName));
-        return ;
+        return;
     }
 
-    //メッセージを送ってからクライアントを削除
+    Channel& ch = channels[chanName];
+
+    // そのチャンネルのメンバーかチェック
+    if (!(ch.isMember(client.getFd())))
+    {
+        srv.sendToFd(client.getFd(), Replies::ERR_NOTONCHANNEL(client.getNick(), chanName));
+        return;
+    }
+
+    // メッセージを送ってからクライアントを削除
     std::string msg = ":" + client.getPrefix() + " PART " + chanName;
-    if(!reason.empty()){
+    if (!reason.empty())
+    {
         msg += " :" + reason;
     }
     msg += "\r\n";
     srv.sendToChannel(ch, msg);
-    
+
     ch.removeMember(client.getFd());
-    //もしチャンネルから誰もいなくなったら、チャンネルを消す
-    if(ch.getMembers().empty()){
+    // もしチャンネルから誰もいなくなったら、チャンネルを消す
+    if (ch.getMembers().empty())
+    {
         channels.erase(chanName);
+    }
+}
+
+void Commands::handleMode(Server& srv, Client& cli, std::vector<std::string>& params)
+{
+    // varidate
+    if (!cli.isAuthenticated())
+    {
+        srv.sendToFd(cli.getFd(), Replies::ERR_NOTREGISTERED(cli.getNick()));
+        return;
+    }
+    if (params.empty())
+    {
+        srv.sendToFd(cli.getFd(), Replies::ERR_NEEDMOREPARAMS(cli.getNick(), "MODE"));
+        return;
+    }
+    std::string chanName = params[0];
+    std::map<std::string, Channel>& channels = srv.getChannels();
+    if (channels.find(chanName) == channels.end())
+    {
+        srv.sendToFd(cli.getFd(), Replies::ERR_NOSUCHCHANNEL(cli.getNick(), chanName));
+        return;
+    }
+    Channel& ch = channels[chanName];
+    if (params.size() == 1)
+    {
+        srv.sendToFd(cli.getFd(),
+                     Replies::RPL_CHANNELMODEIS(cli.getNick(), ch.getName(), ch.getModeString(), ch.getModeParams()));
+        return;
+    }
+
+    if (!ch.isOperator(cli.getFd()))
+    {
+        srv.sendToFd(cli.getFd(), Replies::ERR_CHANOPRIVSNEEDED(cli.getNick(), ch.getName()));
+        return;
+    }
+
+    std::string modeString = params[1];
+    size_t argldx = 2;
+    bool adding = true;
+    std::string appliedModes = "";
+    std::string appliedArgs = "";
+    char lastSign = '\0';
+    for (size_t i = 0; i < modeString.size(); i++)
+    {
+        char c = modeString[i];
+        if (c == '+')
+        {
+            adding = true;
+            continue;
+        }
+        if (c == '-')
+        {
+            adding = false;
+            continue;
+        }
+
+        switch (c)
+        {
+            case 'i':
+                ch.setInviteOnly(adding);
+                recordAppliedMode(appliedModes, lastSign, c, adding);
+                break;
+            case 't':
+                ch.setTopicRestricted(adding);
+                recordAppliedMode(appliedModes, lastSign, c, adding);
+                break;
+            case 'k':
+                if (!adding)
+                {
+                    ch.setKey("");
+                    recordAppliedMode(appliedModes, lastSign, c, adding);
+                    break;
+                }
+                if (params.size() - 1 < argldx)
+                {
+                    srv.sendToFd(cli.getFd(), Replies::ERR_NEEDMOREPARAMS(cli.getNick(), "MODE"));
+                    break;
+                }
+                ch.setKey(params[argldx++]);
+                recordAppliedMode(appliedModes, lastSign, c, adding);
+                appliedArgs += " " + params[argldx - 1];
+                break;
+            case 'l':
+            {
+                if (!adding)
+                {
+                    ch.setLimit(0);
+                    recordAppliedMode(appliedModes, lastSign, c, adding);
+                    break;
+                }
+                if (params.size() - 1 < argldx)
+                {
+                    srv.sendToFd(cli.getFd(), Replies::ERR_NEEDMOREPARAMS(cli.getNick(), "MODE"));
+                    break;
+                }
+                int limit = atoi(params[argldx++].c_str());
+                if (limit > 0)
+                {
+                    ch.setLimit(limit);
+                    recordAppliedMode(appliedModes, lastSign, c, adding);
+                    appliedArgs += " " + params[argldx - 1];
+                }
+                break;
+            }
+            case 'o':
+            {
+                if (params.size() - 1 < argldx)
+                {
+                    srv.sendToFd(cli.getFd(), Replies::ERR_NEEDMOREPARAMS(cli.getNick(), "MODE"));
+                    break;
+                }
+                std::string target_nick = params[argldx++];
+                std::map<int, Client>& clients = srv.getClients();
+                Client* target_cli = NULL;
+                for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
+                {
+                    if (it->second.getNick() == target_nick)
+                    {
+                        target_cli = &it->second;
+                        break;
+                    }
+                }
+                if (!target_cli)
+                {
+                    srv.sendToFd(cli.getFd(), Replies::ERR_NOSUCHNICK(cli.getNick(), target_nick));
+                    break;
+                }
+                if (!ch.isMember(target_cli->getFd()))
+                {
+                    srv.sendToFd(cli.getFd(), Replies::ERR_USERNOTINCHANNEL(cli.getNick(), target_nick, ch.getName()));
+                    break;
+                }
+                if (adding)
+                    ch.addOperator(target_cli->getFd());
+                else
+                    ch.removeOperator(target_cli->getFd());
+                recordAppliedMode(appliedModes, lastSign, c, adding);
+                appliedArgs += " " + params[argldx - 1];
+                break;
+            }
+            default:
+                srv.sendToFd(cli.getFd(), Replies::ERR_UNKNOWNMODE(cli.getNick(), c, ch.getName()));
+                break;
+        }
+    }
+    //  broadcast
+    //  :nick!user@host MODE #chan +it
+    if (!appliedModes.empty()) {
+        std::string modeMsg = ":" + cli.getPrefix() + " MODE " + chanName + " " + appliedModes + appliedArgs + "\r\n";
+        srv.sendToChannel(ch, modeMsg);
     }
 }
 
 // public
 void Commands::dispatch(Server& srv, Client& client, const std::string& line)
 {
-	Message msg = parseLine(line);
+    Message msg = parseLine(line);
     if (msg.command == "PASS")
         handlePass(client, msg.params, srv.getPassword());
     else if (msg.command == "NICK")
@@ -290,4 +491,6 @@ void Commands::dispatch(Server& srv, Client& client, const std::string& line)
         handlePrivmsg(srv, client, msg.params);
     else if (msg.command == "PART")
         handlePart(srv, client, msg.params);
+    else if (msg.command == "MODE")
+        handleMode(srv, client, msg.params);
 }
