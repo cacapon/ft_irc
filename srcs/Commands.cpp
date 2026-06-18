@@ -324,7 +324,7 @@ void Commands::handleKick(Server& srv, Client& client, std::vector<std::string>&
     std::map<int, Client>& clients = srv.getClients();
     for(std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
         if(it->second.getNick() == target) {
-            targetFd = it->first;
+            targetFd = it->second.getFd();
             break ;
         }
     }
