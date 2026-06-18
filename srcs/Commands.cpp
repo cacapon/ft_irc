@@ -2,6 +2,7 @@
 
 #include <sys/socket.h>
 
+#include <cstdlib>
 #include <cstddef>
 #include <string>
 #include <vector>
