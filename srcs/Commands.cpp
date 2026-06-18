@@ -475,6 +475,88 @@ void Commands::handleMode(Server& srv, Client& cli, std::vector<std::string>& pa
     }
 }
 
+void Commands::handleKick(Server& srv, Client& client, std::vector<std::string>& params) {
+    //未認証なら無視
+    if(!client.isAuthenticated()) {
+        srv.sendToFd(client.getFd(), Replies::ERR_NOTREGISTERED(client.getNick()));
+        return ;
+    }
+
+    //引数が足りているかチェック
+    if(params.size() < 2) {
+        srv.sendToFd(client.getFd(), Replies::ERR_NEEDMOREPARAMS(client.getNick(), "KICK"));
+        return ;
+    }
+
+    std::string chanName = params[0];
+    std::string target = params[1];
+    std::string reason;
+    //パラメータがあれば理由の文章も
+    if(params.size() > 2){
+        reason = params[2];
+    } else {
+        reason = "";
+    }
+
+    //チャンネルを探す
+    std::map<std::string, Channel>& channels = srv.getChannels();
+    if(channels.find(chanName) == channels.end()){
+        //なければ　403エラーを送る
+        srv.sendToFd(client.getFd(), Replies::ERR_NOSUCHCHANNEL(client.getNick(), chanName));
+        return ;
+    }
+
+    Channel& ch = channels[chanName];
+
+    //そのチャンネルのメンバーかチェック
+    if(!(ch.isMember(client.getFd()))){
+        srv.sendToFd(client.getFd(), Replies::ERR_NOTONCHANNEL(client.getNick(), chanName));
+        return ;
+    }
+
+    //実行者がオペレータかどうかチェック
+    if(!ch.isOperator(client.getFd())) {
+        srv.sendToFd(client.getFd(), Replies::ERR_CHANOPRIVSNEEDED(client.getNick(),chanName));
+        return ;
+    }
+
+    //KICKする対象のfdをサーバーに接続してるか探す
+    int targetFd = -1;
+    std::map<int, Client>& clients = srv.getClients();
+    for(std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
+        if(it->second.getNick() == target) {
+            targetFd = it->second.getFd();
+            break ;
+        }
+    }
+    //見つからなければエラー
+    if(targetFd == -1) {
+        srv.sendToFd(client.getFd(), Replies::ERR_NOSUCHNICK(client.getNick(), target));
+        return ;
+    }
+
+    //KICK対象がKICKしたいチャンネルメンバーかどうか探す
+    if(!ch.isMember(targetFd)) {
+        srv.sendToFd(client.getFd(), Replies::ERR_USERNOTINCHANNEL(client.getNick(), target, chanName));
+        return ;
+    }
+
+    //メッセージを作成・全体に送信
+    std::string msg = ":" + client.getPrefix() + " KICK " + chanName + " " + target;
+    if(!reason.empty()){
+        msg += " :" + reason;
+    }
+    msg += "\r\n";
+    srv.sendToChannel(ch, msg);
+
+    //対象をチャンネルから削除
+    ch.removeMember(targetFd);
+    if(ch.getMembers().empty()) {
+        channels.erase(chanName);
+    }
+}
+
+
 // public
 void Commands::dispatch(Server& srv, Client& client, const std::string& line)
 {
@@ -493,4 +575,6 @@ void Commands::dispatch(Server& srv, Client& client, const std::string& line)
         handlePart(srv, client, msg.params);
     else if (msg.command == "MODE")
         handleMode(srv, client, msg.params);
+    else if (msg.command == "KICK")
+        handleKick(srv, client, msg.params);
 }
