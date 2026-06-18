@@ -19,12 +19,15 @@ private:  // Methods
     Commands& operator=(const Commands&);
     ~Commands();
 
+    static void recordAppliedMode(std::string& appliedModes, char& lastSign, char modeChar, bool adding);
+
     static void handlePass(Client&, std::vector<std::string>&, const std::string&);
     static void handleNick(Client&, std::vector<std::string>&);
     static void handleUser(Client&, std::vector<std::string>&);
     static void handleJoin(Server&, Client&, std::vector<std::string>&);
 	static void handlePrivmsg(Server&, Client&, std::vector<std::string>&);
     static void handlePart(Server&, Client&, std::vector<std::string>&);
+    static void handleMode(Server&, Client&, std::vector<std::string>&);
     static void handleKick(Server&, Client&, std::vector<std::string>&);
 
 public:
