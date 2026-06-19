@@ -55,4 +55,7 @@ fclean: clean
 
 re: fclean all
 
-.PHONY: all clean fclean re debug test unit_test
+setup-hooks:
+	git config core.hooksPath .githooks
+
+.PHONY: all clean fclean re debug test unit_test setup-hooks
