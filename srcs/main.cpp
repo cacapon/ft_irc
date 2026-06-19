@@ -1,13 +1,16 @@
+#include <cstdlib>
 #include <iostream>
 #include <string>
-#include "Server.hpp"
-#include <cstdlib>
 
-static void usage() {
+#include "Server.hpp"
+
+static void usage()
+{
     std::cout << "Usage: ./ircserv <port> <password>" << std::endl;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     if (argc != 3)
         return (usage(), 1);
 

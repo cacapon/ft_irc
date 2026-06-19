@@ -1,17 +1,18 @@
 #pragma once
 
 #include <poll.h>
+
 #include <cstddef>
 #include <map>
 #include <string>
 #include <vector>
 
-#include "Client.hpp"
 #include "Channel.hpp"
+#include "Client.hpp"
 
 class Server
 {
-private: // Properties
+private:  // Properties
     int _serverFd;
     int _port;
     std::string _password;
@@ -19,7 +20,7 @@ private: // Properties
     std::map<int, Client> _clients;
     std::map<std::string, Channel> _channels;
 
-private: // Methods
+private:  // Methods
     bool makeSocket();
     bool addressRecycle();
     bool makeNonBlocking();
@@ -27,29 +28,28 @@ private: // Methods
     bool startListen();
     bool pollLoop();
 
-	// helper methods
-	void addPollFd(int);
+    // helper methods
+    void addPollFd(int);
 
-	// pollLoop Utils.
-	bool acceptClient();
-	void disconnectClient(size_t);
-	bool receiveData(size_t);
+    // pollLoop Utils.
+    bool acceptClient();
+    void disconnectClient(size_t);
+    bool receiveData(size_t);
 
 public:
     Server();
-	Server(int, const std::string&);
+    Server(int, const std::string&);
     Server(const Server&);
     Server& operator=(const Server&);
     ~Server();
     void run();
 
     //ブロードキャストでチャンネル全体に通知する関数
-    //getter
+    // getter
     std::map<int, Client>& getClients();
     std::map<std::string, Channel>& getChannels();
     const std::string& getPassword() const;
 
     void sendToFd(int fd, const std::string& msg);
     void sendToChannel(const Channel& ch, const std::string& msg, int excludeFd = -1);
-
 };
