@@ -557,6 +557,75 @@ void Commands::handleKick(Server& srv, Client& client, std::vector<std::string>&
     }
 }
 
+void Commands::handleInvite(Server& srv, Client& client, std::vector<std::string>& params) {
+    //未認証なら無視
+    if(!client.isAuthenticated()) {
+        srv.sendToFd(client.getFd(), Replies::ERR_NOTREGISTERED(client.getNick()));
+        return ;
+    }
+
+    //引数が足りているかチェック
+    if(params.size() < 2) {
+        srv.sendToFd(client.getFd(), Replies::ERR_NEEDMOREPARAMS(client.getNick(), "INVITE"));
+        return ;
+    }
+    
+    std::string target = params[0];
+    std::string chanName = params[1];
+
+    //チャンネルを探す
+    std::map<std::string, Channel>& channels = srv.getChannels();
+    if(channels.find(chanName) == channels.end()){
+        //なければ　403エラーを送る
+        srv.sendToFd(client.getFd(), Replies::ERR_NOSUCHCHANNEL(client.getNick(), chanName));
+        return ;
+    }
+
+    Channel& ch = channels[chanName];
+
+    //そのチャンネルのメンバーかチェック
+    if(!(ch.isMember(client.getFd()))){
+        srv.sendToFd(client.getFd(), Replies::ERR_NOTONCHANNEL(client.getNick(), chanName));
+        return ;
+    }
+
+    //オペレーター権限があるかどうかチェック
+    if(ch.isInviteOnly() && !(ch.isOperator(client.getFd()))) {
+        srv.sendToFd(client.getFd(), Replies::ERR_CHANOPRIVSNEEDED(client.getNick(), chanName));
+        return ;
+    }
+
+    //INVITEする対象のfdをサーバーに接続してるか探す
+    int targetFd = -1;
+    std::map<int, Client>& clients = srv.getClients();
+    for(std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it) {
+        if(it->second.getNick() == target) {
+            targetFd = it->second.getFd();
+            break ;
+        }
+    }
+
+    //招待者が存在しなければエラー
+    if(targetFd == -1) {
+      srv.sendToFd(client.getFd(), Replies::ERR_NOSUCHNICK(client.getNick(),target));
+      return ;
+    }
+
+    //相手がチャンネルにいるならエラー
+    if (ch.isMember(targetFd)) {
+        srv.sendToFd(client.getFd(), Replies::ERR_USERONCHANNEL(client.getNick(), target, chanName));
+        return ;
+    }
+    
+    //リストに追加
+    ch.addInvited(targetFd);
+    //招待者へ成功通知
+    srv.sendToFd(client.getFd(), Replies::RPL_INVITING(client.getNick(), chanName, target));
+    //target へ通知
+    std::string msg = ":" + client.getPrefix() + " INVITE " + target + " " + chanName + "\r\n";
+    srv.sendToFd(targetFd, msg);
+}
+
 
 // public
 void Commands::dispatch(Server& srv, Client& client, const std::string& line)
@@ -578,4 +647,6 @@ void Commands::dispatch(Server& srv, Client& client, const std::string& line)
         handleMode(srv, client, msg.params);
     else if (msg.command == "KICK")
         handleKick(srv, client, msg.params);
+    else if(msg.command == "INVITE")
+        handleInvite(srv, client, msg.params);
 }
