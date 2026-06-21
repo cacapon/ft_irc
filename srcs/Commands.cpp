@@ -97,16 +97,16 @@ Message Commands::parseLine(const std::string& line)
     return msg;
 }
 
-void Commands::handlePass(Client& client, std::vector<std::string>& params, const std::string& password)
+void Commands::handlePass(Server& srv, Client& client, std::vector<std::string>& params)
 {
     if (params.empty())
     {
         return;
     }
     std::string pass = params[0];
-    client.setPassOk((pass == password));
+    client.setPassOk((pass == srv.getPassword()));
 }
-void Commands::handleNick(Client& client, std::vector<std::string>& params)
+void Commands::handleNick(Server&, Client& client, std::vector<std::string>& params)
 {
     if (params.empty())
     {
@@ -115,7 +115,7 @@ void Commands::handleNick(Client& client, std::vector<std::string>& params)
     std::string nick = params[0];
     client.setNick(nick);
 }
-void Commands::handleUser(Client& client, std::vector<std::string>& params)
+void Commands::handleUser(Server&, Client& client, std::vector<std::string>& params)
 {
     if (params.empty())
     {
@@ -630,23 +630,22 @@ void Commands::handleInvite(Server& srv, Client& client, std::vector<std::string
 // public
 void Commands::dispatch(Server& srv, Client& client, const std::string& line)
 {
+    typedef void (*HandlerFunc)(Server&, Client&, std::vector<std::string>&);
+    static std::map<std::string, HandlerFunc> table;
+    if (table.empty())
+    {
+        table["PASS"] = &Commands::handlePass;
+        table["NICK"] = &Commands::handleNick;
+        table["USER"] = &Commands::handleUser;
+        table["JOIN"] = &Commands::handleJoin;
+        table["PRIVMSG"] = &Commands::handlePrivmsg;
+        table["PART"] = &Commands::handlePart;
+        table["MODE"] = &Commands::handleMode;
+        table["KICK"] = &Commands::handleKick;
+        table["INVITE"] = &Commands::handleInvite;
+    }
     Message msg = parseLine(line);
-    if (msg.command == "PASS")
-        handlePass(client, msg.params, srv.getPassword());
-    else if (msg.command == "NICK")
-        handleNick(client, msg.params);
-    else if (msg.command == "USER")
-        handleUser(client, msg.params);
-    else if (msg.command == "JOIN")
-        handleJoin(srv, client, msg.params);
-    else if (msg.command == "PRIVMSG")
-        handlePrivmsg(srv, client, msg.params);
-    else if (msg.command == "PART")
-        handlePart(srv, client, msg.params);
-    else if (msg.command == "MODE")
-        handleMode(srv, client, msg.params);
-    else if (msg.command == "KICK")
-        handleKick(srv, client, msg.params);
-    else if(msg.command == "INVITE")
-        handleInvite(srv, client, msg.params);
+    std::map<std::string, HandlerFunc>::const_iterator it = table.find(msg.command);
+    if (it != table.end())
+        it->second(srv, client, msg.params);
 }
