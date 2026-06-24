@@ -685,6 +685,7 @@ void Commands::dispatch(Server& srv, Client& client, const std::string& line)
         table["MODE"] = &Commands::handleMode;
         table["KICK"] = &Commands::handleKick;
         table["INVITE"] = &Commands::handleInvite;
+        table["TOPIC"] = &Commands::handleTopic;
     }
     Message msg = parseLine(line);
     std::map<std::string, HandlerFunc>::const_iterator it = table.find(msg.command);
