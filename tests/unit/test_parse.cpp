@@ -1,6 +1,6 @@
 // test/test_parse.cpp
-#include "test_utils.hpp"
 #include "Commands.hpp"
+#include "test_utils.hpp"
 
 void test_privmsg_channel()
 {
@@ -53,6 +53,42 @@ void test_join_multiple_channels()
     PASS();
 }
 
+void test_topic_view_only()
+{
+    TEST("TOPIC with channel only (view request)");
+    Message msg = Commands::parseLine("TOPIC #general");
+    ASSERT_EQ(msg.params.size(), (size_t)1);
+    ASSERT_EQ(msg.params[0], "#general");
+    PASS();
+}
+
+void test_topic_set()
+{
+    TEST("TOPIC with channel and trailing topic text");
+    Message msg = Commands::parseLine("TOPIC #general :new topic here");
+    ASSERT_EQ(msg.params.size(), (size_t)2);
+    ASSERT_EQ(msg.params[0], "#general");
+    ASSERT_EQ(msg.params[1], "new topic here");
+    PASS();
+}
+
+void test_topic_clear()
+{
+    TEST("TOPIC with empty trailing text (clear topic case)");
+    Message msg = Commands::parseLine("TOPIC #general :");
+    ASSERT_EQ(msg.params.size(), (size_t)2);
+    ASSERT_EQ(msg.params[1], "");
+    PASS();
+}
+
+void test_topic_no_params()
+{
+    TEST("TOPIC with no params (ERR_NEEDMOREPARAMS case)");
+    Message msg = Commands::parseLine("TOPIC");
+    ASSERT_EQ(msg.params.size(), (size_t)0);
+    PASS();
+}
+
 void run_parser_tests()
 {
     test_privmsg_channel();
@@ -61,4 +97,8 @@ void run_parser_tests()
     test_privmsg_no_text_without_colon();
     test_privmsg_no_text_with_empty_colon();
     test_join_multiple_channels();
+    test_topic_view_only();
+    test_topic_set();
+    test_topic_clear();
+    test_topic_no_params();
 }
