@@ -31,6 +31,7 @@ private:  // Methods
     static void handleMode(Server&, Client&, std::vector<std::string>&);
     static void handleKick(Server&, Client&, std::vector<std::string>&);
     static void handleInvite(Server&, Client&, std::vector<std::string>&);
+    static void handleTopic(Server&, Client&, std::vector<std::string>&);
 
 public:
     static void dispatch(Server&, Client&, const std::string&);
