@@ -13,9 +13,9 @@
 #include <iostream>
 #include <string>
 
+#include "Channel.hpp"
 #include "Client.hpp"
 #include "Commands.hpp"
-#include "Channel.hpp"
 
 // private
 
@@ -242,7 +242,7 @@ Server::~Server()
 void Server::run()
 {
     //切断済ソケットにsendすると、OSがプロセスをkillするため、サーバーを動かし続けるためにSIGPIPEを無視
-    signal(SIGPIPE,SIG_IGN);
+    signal(SIGPIPE, SIG_IGN);
     if (!makeSocket())
         return;
     if (!addressRecycle())
@@ -257,28 +257,33 @@ void Server::run()
 }
 
 //ブロードキャスト通知
-//getter
-std::map<int, Client>& Server::getClients(){
+// getter
+std::map<int, Client>& Server::getClients()
+{
     return _clients;
 }
 
-std::map<std::string, Channel>& Server::getChannels(){
+std::map<std::string, Channel>& Server::getChannels()
+{
     return _channels;
 }
 
-const std::string& Server::getPassword() const{
+const std::string& Server::getPassword() const
+{
     return _password;
 }
 
-
-void Server::sendToFd(int fd, const std::string& msg){
+void Server::sendToFd(int fd, const std::string& msg)
+{
     send(fd, msg.c_str(), msg.size(), 0);
 }
 
-void Server::sendToChannel(const Channel& ch, const std::string& msg, int excludeFd){
+void Server::sendToChannel(const Channel& ch, const std::string& msg, int excludeFd)
+{
     const std::set<int>& members = ch.getMembers();
     //チャンネル全員のfdを取得し、forで全員にmsgを送信する
-    for(std::set<int>::const_iterator it = members.begin(); it != members.end(); ++it){
+    for (std::set<int>::const_iterator it = members.begin(); it != members.end(); ++it)
+    {
         if (*it == excludeFd)
             continue;
         sendToFd(*it, msg);

@@ -1,0 +1,28 @@
+#!/bin/bash
+# clang-format staged C++ files, re-stage them, then run the test suite
+
+set -e
+
+if command -v clang-format >/dev/null 2>&1; then
+    FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(cpp|hpp|h)$' || true)
+    if [ -n "$FILES" ]; then
+        echo "Running clang-format on staged files..."
+        for f in $FILES; do
+            clang-format -i "$f"
+            git add "$f"
+        done
+    fi
+else
+    echo "WARN: clang-format not found, skipping format check"
+fi
+
+echo "Running pre-commit checks..."
+bash tests/run_tests.sh
+if [ $? -ne 0 ]; then
+    echo "FAIL: テスト失敗"
+    exit 1
+fi
+
+echo ""
+echo "All checks passed!"
+exit 0
