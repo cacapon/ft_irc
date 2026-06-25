@@ -21,6 +21,7 @@ private:  // Methods
     ~Commands();
 
     static void recordAppliedMode(std::string& appliedModes, char& lastSign, char modeChar, bool adding);
+    static bool isValidNick(const std::string& nick);
 
     static void handlePass(Server&, Client&, std::vector<std::string>&);
     static void handleNick(Server&, Client&, std::vector<std::string>&);

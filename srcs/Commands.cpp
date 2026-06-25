@@ -2,6 +2,7 @@
 
 #include <sys/socket.h>
 
+#include <cctype>
 #include <cstddef>
 #include <cstdlib>
 #include <string>
@@ -21,6 +22,26 @@ void Commands::recordAppliedMode(std::string& appliedModes, char& lastSign, char
         lastSign = adding ? '+' : '-';
     }
     appliedModes += modeChar;
+}
+
+bool Commands::isValidNick(const std::string& nick)
+{
+    if (nick.empty() || nick.size() > 9)
+        return false;
+
+    const std::string special = "[]\\`_^{|}";
+
+    if (!std::isalpha(static_cast<unsigned char>(nick[0])) && special.find(nick[0]) == std::string::npos)
+        return false;
+
+    for (size_t i = 1; i < nick.size(); ++i)
+    {
+        char c = nick[i];
+        if (!std::isalnum(static_cast<unsigned char>(c)) && special.find(c) == std::string::npos && c != '-')
+            return false;
+    }
+
+    return true;
 }
 
 // private
@@ -99,26 +120,71 @@ Message Commands::parseLine(const std::string& line)
 
 void Commands::handlePass(Server& srv, Client& client, std::vector<std::string>& params)
 {
+    // エラー返信先の名前の変数
+    std::string target = client.getNick().empty() ? "*" : client.getNick();
+
+    // すでにユーザーが登録完了済ならエラー
+    if (client.isAuthenticated())
+    {
+        srv.sendToFd(client.getFd(), Replies::ERR_ALREADYREGISTRED(target));
+        return;
+    }
+
     if (params.empty())
     {
+        srv.sendToFd(client.getFd(), Replies::ERR_NEEDMOREPARAMS(target, "PASS"));
         return;
     }
     std::string pass = params[0];
-    client.setPassOk((pass == srv.getPassword()));
+    bool ok = (pass == srv.getPassword());
+    client.setPassOk(ok);
+    if (!ok)
+        srv.sendToFd(client.getFd(), Replies::ERR_PASSWDMISMATCH(target));
 }
-void Commands::handleNick(Server&, Client& client, std::vector<std::string>& params)
+void Commands::handleNick(Server& srv, Client& client, std::vector<std::string>& params)
 {
+    std::string target = client.getNick().empty() ? "*" : client.getNick();
+
     if (params.empty())
     {
+        srv.sendToFd(client.getFd(), Replies::ERR_NONICKNAMEGIVEN(target));
         return;
     }
     std::string nick = params[0];
+
+    if (!isValidNick(nick))
+    {
+        srv.sendToFd(client.getFd(), Replies::ERR_ERRONEUSNICKNAME(target, nick));
+        return;
+    }
+
+    // 重複チェック
+    std::map<int, Client>& clients = srv.getClients();
+    for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
+    {
+        if (it->first != client.getFd() && it->second.getNick() == nick)
+        {
+            srv.sendToFd(client.getFd(), Replies::ERR_NICKNAMEINUSE(target, nick));
+            return;
+        }
+    }
     client.setNick(nick);
 }
-void Commands::handleUser(Server&, Client& client, std::vector<std::string>& params)
+void Commands::handleUser(Server& srv, Client& client, std::vector<std::string>& params)
 {
-    if (params.empty())
+    // エラー返信先の名前の変数
+    std::string target = client.getNick().empty() ? "*" : client.getNick();
+
+    // すでにユーザーが登録完了済ならエラー
+    if (client.isAuthenticated())
     {
+        srv.sendToFd(client.getFd(), Replies::ERR_ALREADYREGISTRED(target));
+        return;
+    }
+
+    if (params.size() < 4)
+    {
+        srv.sendToFd(client.getFd(), Replies::ERR_NEEDMOREPARAMS(target, "USER"));
         return;
     }
     std::string user = params[0];
