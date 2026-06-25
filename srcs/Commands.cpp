@@ -97,6 +97,13 @@ Message Commands::parseLine(const std::string& line)
     return msg;
 }
 
+void Commands::handlePing(Server& srv, Client& cli, std::vector<std::string>& params)
+{
+    std::string token = params.empty() ? "" : params[0];
+    std::string msg = ":" SERVER_NAME " PONG " SERVER_NAME " :" + token + "\r\n";
+    srv.sendToFd(cli.getFd(), msg);
+}
+
 void Commands::handlePass(Server& srv, Client& client, std::vector<std::string>& params)
 {
     if (params.empty())
@@ -735,6 +742,7 @@ void Commands::dispatch(Server& srv, Client& client, const std::string& line)
     static std::map<std::string, HandlerFunc> table;
     if (table.empty())
     {
+        table["PING"] = &Commands::handlePing;
         table["PASS"] = &Commands::handlePass;
         table["NICK"] = &Commands::handleNick;
         table["USER"] = &Commands::handleUser;
