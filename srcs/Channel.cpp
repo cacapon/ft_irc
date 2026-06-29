@@ -41,9 +41,10 @@ Channel::~Channel()
 }
 
 // member
+//  A member function of `std::set`. Returns 0 if `fd` is not in the set.
 bool Channel::isMember(int fd) const
 {
-    return _members.count(fd) != 0;  // std::setのメンバ関数。配列内にfdがなければ0を返す
+    return _members.count(fd) != 0;
 }
 void Channel::addMember(int fd)
 {

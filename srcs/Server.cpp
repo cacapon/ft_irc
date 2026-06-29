@@ -241,7 +241,8 @@ Server::~Server()
 
 void Server::run()
 {
-    //切断済ソケットにsendすると、OSがプロセスをkillするため、サーバーを動かし続けるためにSIGPIPEを無視
+    // Sending a message to a disconnected socket causes the OS to kill the process,
+    // so SIGPIPE must be ignored to keep the server running.
     signal(SIGPIPE, SIG_IGN);
     if (!makeSocket())
         return;
@@ -256,8 +257,8 @@ void Server::run()
     pollLoop();
 }
 
-//ブロードキャスト通知
-// getter
+// Broadcast Notifications
+//  getter
 std::map<int, Client>& Server::getClients()
 {
     return _clients;
@@ -281,7 +282,7 @@ void Server::sendToFd(int fd, const std::string& msg)
 void Server::sendToChannel(const Channel& ch, const std::string& msg, int excludeFd)
 {
     const std::set<int>& members = ch.getMembers();
-    //チャンネル全員のfdを取得し、forで全員にmsgを送信する
+    // Get the fds of all channel members and send msg to each of them
     for (std::set<int>::const_iterator it = members.begin(); it != members.end(); ++it)
     {
         if (*it == excludeFd)

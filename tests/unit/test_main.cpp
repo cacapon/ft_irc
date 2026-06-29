@@ -6,7 +6,7 @@ int g_failed = 0;
 
 void run_parser_tests();
 void run_replies_tests();
-// 新しいテストを増やすたびにここに宣言を追加
+// Add a declaration here every time you add a new test
 
 int main()
 {
