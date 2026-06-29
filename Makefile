@@ -6,7 +6,7 @@
 #    By: ttsubo <ttsubo@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/07/13 12:46:57 by ttsubo            #+#    #+#              #
-#    Updated: 2026/06/14 09:57:24 by ttsubo           ###   ########.fr        #
+#    Updated: 2026/06/29 21:57:18 by ttsubo           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -58,4 +58,4 @@ re: fclean all
 setup-hooks:
 	git config core.hooksPath .githooks
 
-.PHONY: all clean fclean re debug test unit_test setup-hooks
+.PHONY: all clean fclean re test unit_test setup-hooks
