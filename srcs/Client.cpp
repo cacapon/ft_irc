@@ -6,11 +6,11 @@ Client::Client() : _fd(-1), _passOk(false)
 Client::Client(int fd) : _fd(fd), _passOk(false)
 {
 }
-Client::Client(const Client &src)
+Client::Client(const Client& src)
     : _fd(src.getFd()), _nick(src.getNick()), _user(src.getUser()), _recvBuf(src.getRecvBuf()), _passOk(src.isPassOk())
 {
 }
-Client &Client::operator=(const Client &other)
+Client& Client::operator=(const Client& other)
 {
     if (this != &other)
     {
@@ -47,11 +47,11 @@ std::string Client::getRecvBuf() const
     return (_recvBuf);
 }
 
-void Client::setNick(const std::string &nick)
+void Client::setNick(const std::string& nick)
 {
     _nick = nick;
 }
-void Client::setUser(const std::string &user)
+void Client::setUser(const std::string& user)
 {
     _user = user;
 }
@@ -60,12 +60,12 @@ void Client::setPassOk(bool ok)
     _passOk = ok;
 }
 
-void Client::appendRecvBuf(const std::string &data)
+void Client::appendRecvBuf(const std::string& data)
 {
     _recvBuf += data;
 }
 
-// \r\nの分はメソッド内で消す
+// Removes the \r\n along with the consumed portion
 void Client::eraseRecvBuf(size_t pos)
 {
     _recvBuf.erase(0, pos + 2);
@@ -78,6 +78,6 @@ bool Client::isAuthenticated() const
 
 std::string Client::getPrefix() const
 {
-    // irssiは厳密にホスト名を見ているわけではないのでlocalhostにしている（要相談）
+    // Since irssi doesn't strictly check the hostname, I've set it to “localhost”
     return _nick + "!" + _user + "@localhost";
 }

@@ -127,10 +127,10 @@ void Commands::handlePing(Server& srv, Client& cli, std::vector<std::string>& pa
 
 void Commands::handlePass(Server& srv, Client& client, std::vector<std::string>& params)
 {
-    // エラー返信先の名前の変数
+    // Variable for the name of the error reply recipient
     std::string target = client.getNick().empty() ? "*" : client.getNick();
 
-    // すでにユーザーが登録完了済ならエラー
+    // An error occurs if the user has already completed registration
     if (client.isAuthenticated())
     {
         srv.sendToFd(client.getFd(), Replies::ERR_ALREADYREGISTRED(target));
@@ -165,7 +165,7 @@ void Commands::handleNick(Server& srv, Client& client, std::vector<std::string>&
         return;
     }
 
-    // 重複チェック
+    // Duplicate Check
     std::map<int, Client>& clients = srv.getClients();
     for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
     {
@@ -179,10 +179,10 @@ void Commands::handleNick(Server& srv, Client& client, std::vector<std::string>&
 }
 void Commands::handleUser(Server& srv, Client& client, std::vector<std::string>& params)
 {
-    // エラー返信先の名前の変数
+    // Variable for the name of the error reply recipient
     std::string target = client.getNick().empty() ? "*" : client.getNick();
 
-    // すでにユーザーが登録完了済ならエラー
+    // An error occurs if the user has already completed registration
     if (client.isAuthenticated())
     {
         srv.sendToFd(client.getFd(), Replies::ERR_ALREADYREGISTRED(target));
@@ -206,30 +206,31 @@ void Commands::handleUser(Server& srv, Client& client, std::vector<std::string>&
 
 void Commands::handleJoin(Server& srv, Client& client, std::vector<std::string>& params)
 {
-    // 未認証なら無視
+    // If it's not verified, ignore it
     if (!client.isAuthenticated())
     {
         srv.sendToFd(client.getFd(), Replies::ERR_NOTREGISTERED(client.getNick()));
         return;
     }
-    // chanNameがなければ461(ERR_NEEDMOREPARAMS)をclientに送ってreturn
+    // If `chanName` is missing, send 461 (ERR_NEEDMOREPARAMS) to the client and return.
     if (params.empty())
     {
         srv.sendToFd(client.getFd(), Replies::ERR_NEEDMOREPARAMS(client.getNick(), "JOIN"));
         return;
     }
 
-    // チャンネル名を1つ読む
+    // Read one channel name
     std::string chanName = params[0];
 
-    // 名前検証
-    // 先頭が#, & 以外　OR　チャンネル名が1文字もない　(ERR_NOSUCHCHANNEL)
+    // Name Validation
+    // The first character is not # or &,
+    // OR the channel name contains no characters (ERR_NOSUCHCHANNEL)
     if (chanName.size() < 2 || (chanName[0] != '#' && chanName[0] != '&'))
     {
         srv.sendToFd(client.getFd(), Replies::ERR_NOSUCHCHANNEL(client.getNick(), chanName));
         return;
     }
-    // チャンネル名に使われている文字が正しいか
+    // Are the characters used in the channel name correct?
     for (size_t i = 0; i < chanName.size(); ++i)
     {
         char c = chanName[i];
@@ -240,11 +241,11 @@ void Commands::handleJoin(Server& srv, Client& client, std::vector<std::string>&
         }
     }
 
-    // チャンネルを探す/作る
+    // Find/Create a Channel
     std::map<std::string, Channel>& channels = srv.getChannels();
     if (channels.find(chanName) == channels.end())
     {
-        // ない場合は新規作成
+        // If none exists, create a new one
         Channel& ch = channels.insert(std::make_pair(chanName, Channel(chanName))).first->second;
         ch.addMember(client.getFd());
         ch.addOperator(client.getFd());
@@ -252,22 +253,22 @@ void Commands::handleJoin(Server& srv, Client& client, std::vector<std::string>&
     else
     {
         Channel& ch = channels[chanName];
-        // すでにメンバーならreturn
+        // If you're already a member, return
         if (ch.isMember(client.getFd()))
             return;
-        // iモードエラーハンドリング
+        // i-mode Error Handling
         if (ch.isInviteOnly() && !ch.isInvited(client.getFd()))
         {
             srv.sendToFd(client.getFd(), Replies::ERR_INVITEONLYCHAN(client.getNick(), chanName));
             return;
         }
-        // kモードエラーハンドリング
+        // k-mode Error Handling
         if (!ch.getKey().empty() && (params.size() < 2 || params[1] != ch.getKey()))
         {
             srv.sendToFd(client.getFd(), Replies::ERR_BADCHANNELKEY(client.getNick(), chanName));
             return;
         }
-        // lモードエラーハンドリング
+        // l-mode Error Handling
         if (ch.getLimit() > 0 && (static_cast<int>(ch.getMembers().size()) >= ch.getLimit()))
         {
             srv.sendToFd(client.getFd(), Replies::ERR_CHANNELISFULL(client.getNick(), chanName));
@@ -276,9 +277,9 @@ void Commands::handleJoin(Server& srv, Client& client, std::vector<std::string>&
         ch.addMember(client.getFd());
         ch.removeInvited(client.getFd());
     }
-    // ここで改めて ch を取得（もう必ず存在する）
+    // Here, we retrieve `ch` again (it definitely exists by now).
     Channel& ch = channels[chanName];
-    // 参加成功時のメッセージ
+    // Message when participation is successful
     std::string joinMsg = ":" + client.getPrefix() + " JOIN " + chanName + "\r\n";
     srv.sendToChannel(ch, joinMsg);
 
@@ -354,14 +355,14 @@ void Commands::handlePrivmsg(Server& srv, Client& client, std::vector<std::strin
 
 void Commands::handlePart(Server& srv, Client& client, std::vector<std::string>& params)
 {
-    // 未認証なら無視
+    // If it's not verified, ignore it
     if (!client.isAuthenticated())
     {
         srv.sendToFd(client.getFd(), Replies::ERR_NOTREGISTERED(client.getNick()));
         return;
     }
 
-    // paramsが空なら 461 ERR_NEEDMOREPARAMS を返す
+    // If `params` is empty, return 461 ERR_NEEDMOREPARAMS.
     if (params.empty())
     {
         srv.sendToFd(client.getFd(), Replies::ERR_NEEDMOREPARAMS(client.getNick(), "PART"));
@@ -370,7 +371,7 @@ void Commands::handlePart(Server& srv, Client& client, std::vector<std::string>&
 
     std::string chanName = params[0];
     std::string reason;
-    // パラメータがあれば理由の文章も
+    // If there are parameters, include an explanation as well.
     if (params.size() > 1)
     {
         reason = params[1];
@@ -380,25 +381,25 @@ void Commands::handlePart(Server& srv, Client& client, std::vector<std::string>&
         reason = "";
     }
 
-    // チャンネルを探す
+    // Find a Channel
     std::map<std::string, Channel>& channels = srv.getChannels();
     if (channels.find(chanName) == channels.end())
     {
-        // なければ　403エラーを送る
+        // If not, return a 403 error.
         srv.sendToFd(client.getFd(), Replies::ERR_NOSUCHCHANNEL(client.getNick(), chanName));
         return;
     }
 
     Channel& ch = channels[chanName];
 
-    // そのチャンネルのメンバーかチェック
+    // Check if you're a member of that channel
     if (!(ch.isMember(client.getFd())))
     {
         srv.sendToFd(client.getFd(), Replies::ERR_NOTONCHANNEL(client.getNick(), chanName));
         return;
     }
 
-    // メッセージを送ってからクライアントを削除
+    // Delete the client after sending a message
     std::string msg = ":" + client.getPrefix() + " PART " + chanName;
     if (!reason.empty())
     {
@@ -408,7 +409,7 @@ void Commands::handlePart(Server& srv, Client& client, std::vector<std::string>&
     srv.sendToChannel(ch, msg);
 
     ch.removeMember(client.getFd());
-    // もしチャンネルから誰もいなくなったら、チャンネルを消す
+    // If everyone leaves the channel, delete the channel.
     if (ch.getMembers().empty())
     {
         channels.erase(chanName);
@@ -569,14 +570,14 @@ void Commands::handleMode(Server& srv, Client& cli, std::vector<std::string>& pa
 
 void Commands::handleKick(Server& srv, Client& client, std::vector<std::string>& params)
 {
-    // 未認証なら無視
+    // If it's not verified, ignore it
     if (!client.isAuthenticated())
     {
         srv.sendToFd(client.getFd(), Replies::ERR_NOTREGISTERED(client.getNick()));
         return;
     }
 
-    // 引数が足りているかチェック
+    // Check if there are enough arguments
     if (params.size() < 2)
     {
         srv.sendToFd(client.getFd(), Replies::ERR_NEEDMOREPARAMS(client.getNick(), "KICK"));
@@ -586,7 +587,7 @@ void Commands::handleKick(Server& srv, Client& client, std::vector<std::string>&
     std::string chanName = params[0];
     std::string target = params[1];
     std::string reason;
-    // パラメータがあれば理由の文章も
+    // If there are parameters, include an explanation as well
     if (params.size() > 2)
     {
         reason = params[2];
@@ -596,32 +597,32 @@ void Commands::handleKick(Server& srv, Client& client, std::vector<std::string>&
         reason = "";
     }
 
-    // チャンネルを探す
+    // Find a Channel
     std::map<std::string, Channel>& channels = srv.getChannels();
     if (channels.find(chanName) == channels.end())
     {
-        // なければ　403エラーを送る
+        // If not, return a 403 error.
         srv.sendToFd(client.getFd(), Replies::ERR_NOSUCHCHANNEL(client.getNick(), chanName));
         return;
     }
 
     Channel& ch = channels[chanName];
 
-    // そのチャンネルのメンバーかチェック
+    // Check if you're a member of that channel
     if (!(ch.isMember(client.getFd())))
     {
         srv.sendToFd(client.getFd(), Replies::ERR_NOTONCHANNEL(client.getNick(), chanName));
         return;
     }
 
-    // 実行者がオペレータかどうかチェック
+    // Check whether the executor is an operator
     if (!ch.isOperator(client.getFd()))
     {
         srv.sendToFd(client.getFd(), Replies::ERR_CHANOPRIVSNEEDED(client.getNick(), chanName));
         return;
     }
 
-    // KICKする対象のfdをサーバーに接続してるか探す
+    // Check whether the fd to be KICKed is connected to the server
     int targetFd = -1;
     std::map<int, Client>& clients = srv.getClients();
     for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
@@ -632,21 +633,21 @@ void Commands::handleKick(Server& srv, Client& client, std::vector<std::string>&
             break;
         }
     }
-    // 見つからなければエラー
+    // If it isn't found, an error occurs
     if (targetFd == -1)
     {
         srv.sendToFd(client.getFd(), Replies::ERR_NOSUCHNICK(client.getNick(), target));
         return;
     }
 
-    // KICK対象がKICKしたいチャンネルメンバーかどうか探す
+    // Check whether the target of the KICK command is a channel member you want to kick
     if (!ch.isMember(targetFd))
     {
         srv.sendToFd(client.getFd(), Replies::ERR_USERNOTINCHANNEL(client.getNick(), target, chanName));
         return;
     }
 
-    // メッセージを作成・全体に送信
+    // Create a message and send it to everyone
     std::string msg = ":" + client.getPrefix() + " KICK " + chanName + " " + target;
     if (!reason.empty())
     {
@@ -655,7 +656,7 @@ void Commands::handleKick(Server& srv, Client& client, std::vector<std::string>&
     msg += "\r\n";
     srv.sendToChannel(ch, msg);
 
-    // 対象をチャンネルから削除
+    // Remove the item from the channel
     ch.removeMember(targetFd);
     if (ch.getMembers().empty())
     {
@@ -665,14 +666,14 @@ void Commands::handleKick(Server& srv, Client& client, std::vector<std::string>&
 
 void Commands::handleInvite(Server& srv, Client& client, std::vector<std::string>& params)
 {
-    // 未認証なら無視
+    // If it's not verified, ignore it
     if (!client.isAuthenticated())
     {
         srv.sendToFd(client.getFd(), Replies::ERR_NOTREGISTERED(client.getNick()));
         return;
     }
 
-    // 引数が足りているかチェック
+    // Check if there are enough arguments
     if (params.size() < 2)
     {
         srv.sendToFd(client.getFd(), Replies::ERR_NEEDMOREPARAMS(client.getNick(), "INVITE"));
@@ -682,32 +683,32 @@ void Commands::handleInvite(Server& srv, Client& client, std::vector<std::string
     std::string target = params[0];
     std::string chanName = params[1];
 
-    // チャンネルを探す
+    // Find a Channel
     std::map<std::string, Channel>& channels = srv.getChannels();
     if (channels.find(chanName) == channels.end())
     {
-        // なければ　403エラーを送る
+        // If not, return a 403 error.
         srv.sendToFd(client.getFd(), Replies::ERR_NOSUCHCHANNEL(client.getNick(), chanName));
         return;
     }
 
     Channel& ch = channels[chanName];
 
-    // そのチャンネルのメンバーかチェック
+    // Check if you're a member of that channel
     if (!(ch.isMember(client.getFd())))
     {
         srv.sendToFd(client.getFd(), Replies::ERR_NOTONCHANNEL(client.getNick(), chanName));
         return;
     }
 
-    // オペレーター権限があるかどうかチェック
+    // Check whether you have operator privileges
     if (ch.isInviteOnly() && !(ch.isOperator(client.getFd())))
     {
         srv.sendToFd(client.getFd(), Replies::ERR_CHANOPRIVSNEEDED(client.getNick(), chanName));
         return;
     }
 
-    // INVITEする対象のfdをサーバーに接続してるか探す
+    // Check whether the target fd to be INVITED is connected to the server
     int targetFd = -1;
     std::map<int, Client>& clients = srv.getClients();
     for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
@@ -719,25 +720,23 @@ void Commands::handleInvite(Server& srv, Client& client, std::vector<std::string
         }
     }
 
-    // 招待者が存在しなければエラー
+    // An error occurs if there are no invitees
     if (targetFd == -1)
     {
         srv.sendToFd(client.getFd(), Replies::ERR_NOSUCHNICK(client.getNick(), target));
         return;
     }
 
-    // 相手がチャンネルにいるならエラー
+    // Error if the other party is on the channel
     if (ch.isMember(targetFd))
     {
         srv.sendToFd(client.getFd(), Replies::ERR_USERONCHANNEL(client.getNick(), target, chanName));
         return;
     }
 
-    // リストに追加
     ch.addInvited(targetFd);
-    // 招待者へ成功通知
+    // Notice
     srv.sendToFd(client.getFd(), Replies::RPL_INVITING(client.getNick(), chanName, target));
-    // target へ通知
     std::string msg = ":" + client.getPrefix() + " INVITE " + target + " " + chanName + "\r\n";
     srv.sendToFd(targetFd, msg);
 }

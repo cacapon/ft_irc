@@ -8,8 +8,8 @@ class Channel
 {
 private:
     std::string _name;
-    std::set<int> _members;    // 接続してるクライアントのソケットファイルのfdを保管
-    std::set<int> _operators;  // ニックネームは変更可能なため、不変のfdで保存
+    std::set<int> _members;    // Store the file descriptors (fd) of the connected clients' socket files
+    std::set<int> _operators;  // Since nicknames can be changed, they are stored using an immutable fd
     std::string _topic;
     std::set<int> _inviteList;
     bool _inviteOnly;

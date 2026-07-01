@@ -44,7 +44,7 @@ public:
     ~Server();
     void run();
 
-    //ブロードキャストでチャンネル全体に通知する関数
+    // Function to send a notification to the entire channel via broadcast
     // getter
     std::map<int, Client>& getClients();
     std::map<std::string, Channel>& getChannels();
