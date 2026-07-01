@@ -193,6 +193,11 @@ bool Server::receiveData(size_t i)
     }
     else
     {
+        // RFC 2812 2.3: a message is at most 512 bytes including the trailing
+        // CRLF, leaving at most 510 bytes for the command and its parameters.
+        const size_t MAX_MSG_LEN = 512;
+        const size_t MAX_CONTENT_LEN = MAX_MSG_LEN - 2;  // 510
+
         int fd = _pollfds[i].fd;
         Client& client = _clients[fd];
         client.appendRecvBuf(std::string(buf, bytes));
@@ -202,7 +207,33 @@ bool Server::receiveData(size_t i)
         {
             std::string line = client.getRecvBuf().substr(0, pos);
             client.eraseRecvBuf(pos);
+
+            // The CRLF closing an over-long line: its head was already truncated
+            // and dispatched, so just drop this trailing remainder.
+            if (client.isOverLength())
+            {
+                client.setOverLength(false);
+                continue;
+            }
+            // A whole line exceeding the limit is truncated to 510 (RFC 2812).
+            if (line.size() > MAX_CONTENT_LEN)
+                line.resize(MAX_CONTENT_LEN);
             Commands::dispatch(*this, client, line);
+        }
+
+        // The loop above consumed every complete line, so the buffer now holds
+        // no CRLF. If what remains still exceeds the limit, it is the head of an
+        // over-long line (never a valid command): dispatch its truncated head
+        // once, then discard the rest until CRLF arrives. This also bounds the
+        // buffer against a client that never sends CRLF.
+        if (client.getRecvBuf().size() > MAX_MSG_LEN)
+        {
+            if (!client.isOverLength())
+            {
+                Commands::dispatch(*this, client, client.getRecvBuf().substr(0, MAX_CONTENT_LEN));
+                client.setOverLength(true);
+            }
+            client.clearRecvBuf();
         }
     }
     return false;
