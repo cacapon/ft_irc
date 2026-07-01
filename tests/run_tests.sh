@@ -32,6 +32,7 @@ echo ""
 run tests/Integration/test_main.sh
 run tests/Integration/test_topic.sh
 run tests/Integration/test_ping.sh
+run tests/Integration/test_max_length.sh
 # run tests/Integration/test_auth.sh  ← 増えたら追加
 
 # 総合結果

@@ -1,13 +1,18 @@
 #include "Client.hpp"
 
-Client::Client() : _fd(-1), _passOk(false)
+Client::Client() : _fd(-1), _passOk(false), _overLength(false)
 {
 }
-Client::Client(int fd) : _fd(fd), _passOk(false)
+Client::Client(int fd) : _fd(fd), _passOk(false), _overLength(false)
 {
 }
 Client::Client(const Client& src)
-    : _fd(src.getFd()), _nick(src.getNick()), _user(src.getUser()), _recvBuf(src.getRecvBuf()), _passOk(src.isPassOk())
+    : _fd(src.getFd()),
+      _nick(src.getNick()),
+      _user(src.getUser()),
+      _recvBuf(src.getRecvBuf()),
+      _passOk(src.isPassOk()),
+      _overLength(src.isOverLength())
 {
 }
 Client& Client::operator=(const Client& other)
@@ -19,6 +24,7 @@ Client& Client::operator=(const Client& other)
         _user = other.getUser();
         _recvBuf = other.getRecvBuf();
         _passOk = other.isPassOk();
+        _overLength = other.isOverLength();
     }
     return (*this);
 }
@@ -42,7 +48,7 @@ bool Client::isPassOk() const
 {
     return (_passOk);
 }
-std::string Client::getRecvBuf() const
+const std::string& Client::getRecvBuf() const
 {
     return (_recvBuf);
 }
@@ -69,6 +75,21 @@ void Client::appendRecvBuf(const std::string& data)
 void Client::eraseRecvBuf(size_t pos)
 {
     _recvBuf.erase(0, pos + 2);
+}
+
+void Client::clearRecvBuf()
+{
+    _recvBuf.clear();
+}
+
+bool Client::isOverLength() const
+{
+    return (_overLength);
+}
+
+void Client::setOverLength(bool over)
+{
+    _overLength = over;
 }
 
 bool Client::isAuthenticated() const
