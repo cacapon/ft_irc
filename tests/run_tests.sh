@@ -30,10 +30,18 @@ echo ""
 
 # 統合テスト実行
 run tests/Integration/test_main.sh
+run tests/Integration/test_pass.sh
+run tests/Integration/test_nick.sh
+run tests/Integration/test_user.sh
+run tests/Integration/test_join.sh
+run tests/Integration/test_privmsg.sh
+run tests/Integration/test_part.sh
+run tests/Integration/test_mode.sh
+run tests/Integration/test_kick.sh
+run tests/Integration/test_invite.sh
 run tests/Integration/test_topic.sh
 run tests/Integration/test_ping.sh
 run tests/Integration/test_max_length.sh
-# run tests/Integration/test_auth.sh  ← 増えたら追加
 
 # 総合結果
 echo "================================"

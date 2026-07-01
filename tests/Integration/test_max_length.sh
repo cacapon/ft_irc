@@ -12,20 +12,6 @@ PASSWORD=pass
 SERVER_PID=$!
 sleep 0.3
 
-read_lines() {
-    local fd=$1
-    local n=$2
-    local out=""
-    local line
-    local i=0
-    while [ "$i" -lt "$n" ]; do
-        read -t 5 -r line <&"$fd" || break
-        out+="$line"$'\n'
-        i=$((i + 1))
-    done
-    printf '%s' "$out"
-}
-
 # 無音（1秒）になるまで到達している全行を集める。
 # 応答行数が可変（エラー応答が混ざる等）のケースで使う。
 drain() {

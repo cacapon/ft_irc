@@ -17,7 +17,6 @@ check "正しい引数でServer listening" \
 (echo > /dev/tcp/127.0.0.1/6667) 2>/dev/null
 check "ポート6667でlistenしている" "0" "$?"
 
-
 kill $SERVER_PID 2>/dev/null
 wait $SERVER_PID 2>/dev/null
 rm -f /tmp/ircserv_out.txt
