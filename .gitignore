@@ -121,3 +121,4 @@ unit_tests
 .claude/
 .vscode/
 *.swp
+dist/
