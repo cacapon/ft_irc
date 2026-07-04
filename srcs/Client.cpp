@@ -75,8 +75,8 @@ void Client::appendRecvBuf(const std::string& data)
     _recvBuf += data;
 }
 
-// posは行末の\nのインデックス(呼び出し側がfind('\n')で検出)。
-// \nまでを消費することで、\r\n終端・\n単独終端の両方に対応する。
+// pos is the index of the line's terminating '\n' (found by the caller via
+// find('\n')). Consuming through '\n' handles both '\r\n' and bare '\n' endings.
 void Client::eraseRecvBuf(size_t pos)
 {
     _recvBuf.erase(0, pos + 1);
