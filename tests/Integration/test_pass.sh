@@ -38,11 +38,11 @@ resp=$(read_lines 3 1)
 check "PASS前のNICKでERR_NOTREGISTERED(451)" "1" "$(echo "$resp" | grep -c ' 451 ')"
 exec 3<&- 3>&-
 
-# PASS前のPING → ERR_NOTREGISTERED(451)
+# PING は PASS 不要で常に応答する
 exec 3<>/dev/tcp/127.0.0.1/$PORT
 printf 'PING token\r\n' >&3
 resp=$(read_lines 3 1)
-check "PASS前のPINGでERR_NOTREGISTERED(451)" "1" "$(echo "$resp" | grep -c ' 451 ')"
+check "PASS前でもPINGにPONGが返る" "1" "$(echo "$resp" | grep -c ':ircserv PONG ircserv :token')"
 exec 3<&- 3>&-
 
 kill $SERVER_PID 2>/dev/null

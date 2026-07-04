@@ -136,14 +136,8 @@ Message Commands::parseLine(const std::string& line)
 
 void Commands::handlePing(Server& srv, Client& cli, std::vector<std::string>& params)
 {
-    // PING is rejected until the password has been accepted.
-    if (!cli.isPassOk())
-    {
-        std::string target = cli.getNick().empty() ? "*" : cli.getNick();
-        srv.sendToFd(cli.getFd(), Replies::ERR_NOTREGISTERED(target));
-        return;
-    }
-
+    // PING is a connection-keepalive check and creates no session state, so it
+    // is answered regardless of registration (no PASS required).
     std::string token = params.empty() ? "" : params[0];
     std::string msg = ":" SERVER_NAME " PONG " SERVER_NAME " :" + token + "\r\n";
     srv.sendToFd(cli.getFd(), msg);
