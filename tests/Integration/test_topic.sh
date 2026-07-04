@@ -13,7 +13,8 @@ sleep 0.3
 # alice接続・登録
 exec 3<>/dev/tcp/127.0.0.1/$PORT
 printf 'PASS %s\r\nNICK alice\r\nUSER alice 0 * :Alice\r\n' "$PASSWORD" >&3
-resp=$(read_lines 3 1)
+# 登録完了時は001-004の4行が送られる
+resp=$(read_lines 3 4)
 check "alice登録でWelcome(001)を受信" "1" "$(echo "$resp" | grep -c ' 001 ')"
 
 # JOIN（トピック未設定: JOIN通知+RPL_NOTOPICの2行）
@@ -53,7 +54,7 @@ check "存在しないチャンネルでERR_NOSUCHCHANNEL(403)" "1" "$(echo "$re
 # bob接続・登録（#testには未参加）
 exec 4<>/dev/tcp/127.0.0.1/$PORT
 printf 'PASS %s\r\nNICK bob\r\nUSER bob 0 * :Bob\r\n' "$PASSWORD" >&4
-read_lines 4 1 > /dev/null
+read_lines 4 4 > /dev/null
 
 printf 'TOPIC #test\r\n' >&4
 resp=$(read_lines 4 1)

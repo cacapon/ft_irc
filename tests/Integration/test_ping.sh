@@ -11,13 +11,26 @@ sleep 0.3
 # alice接続・登録
 exec 3<>/dev/tcp/127.0.0.1/$PORT
 printf 'PASS %s\r\nNICK alice\r\nUSER alice 0 * :Alice\r\n' "$PASSWORD" >&3
-resp=$(read_lines 3 1)
+# 登録完了時は001-004の4行が送られる
+resp=$(read_lines 3 4)
 check "alice登録でWelcome(001)を受信" "1" "$(echo "$resp" | grep -c ' 001 ')"
 
 printf 'PING hello\r\n' >&3
 resp=$(read_lines 3 1)
 check "PING送信後にメッセージを受信" "1" \
     "$(echo "$resp" | grep -c ':ircserv PONG ircserv :hello')"
+
+# 回帰: NICK衝突(433)→USER→再NICKの順でも登録完了時に001-004が届くこと。
+# 旧実装はUSER受信時点でしか001判定せず、この順序では001が永遠に来なかった。
+exec 4<>/dev/tcp/127.0.0.1/$PORT
+printf 'PASS %s\r\nNICK alice\r\n' "$PASSWORD" >&4
+resp=$(read_lines 4 1)
+check "使用中NICKで433を受信" "1" "$(echo "$resp" | grep -c ' 433 ')"
+printf 'USER bob 0 * :Bob\r\nNICK bob\r\n' >&4
+resp=$(read_lines 4 4)
+check "衝突後に別NICKで確定すると001が届く(回帰)" "1" "$(echo "$resp" | grep -c ' 001 ')"
+check "衝突後の登録で002-004も届く" "3" "$(echo "$resp" | grep -c ' 00[2-4] ')"
+exec 4<&- 4>&-
 
 exec 3<&- 3>&-
 

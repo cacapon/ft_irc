@@ -17,6 +17,9 @@ private:
     // after the current dispatch finishes.
     bool _quitRequested;
     std::string _quitReason;
+    // Whether 001-004 have been sent; guards against re-sending when tryRegister
+    // runs again (e.g. on a later NICK change).
+    bool _welcomed;
 
 public:
     Client();
@@ -47,8 +50,12 @@ public:
     bool isQuitRequested() const;
     const std::string& getQuitReason() const;
 
+    bool isWelcomed() const;
+    void setWelcomed(bool welcomed);
+
     bool isAuthenticated() const;
 
     // For displaying the prefix in participation messages
     std::string getPrefix() const;
+    std::string getHost() const;
 };

@@ -1,9 +1,9 @@
 #include "Client.hpp"
 
-Client::Client() : _fd(-1), _passOk(false), _overLength(false), _quitRequested(false)
+Client::Client() : _fd(-1), _passOk(false), _overLength(false), _quitRequested(false), _welcomed(false)
 {
 }
-Client::Client(int fd) : _fd(fd), _passOk(false), _overLength(false), _quitRequested(false)
+Client::Client(int fd) : _fd(fd), _passOk(false), _overLength(false), _quitRequested(false), _welcomed(false)
 {
 }
 Client::Client(const Client& src)
@@ -14,7 +14,8 @@ Client::Client(const Client& src)
       _passOk(src.isPassOk()),
       _overLength(src.isOverLength()),
       _quitRequested(src.isQuitRequested()),
-      _quitReason(src.getQuitReason())
+      _quitReason(src.getQuitReason()),
+      _welcomed(src.isWelcomed())
 {
 }
 Client& Client::operator=(const Client& other)
@@ -29,6 +30,7 @@ Client& Client::operator=(const Client& other)
         _overLength = other.isOverLength();
         _quitRequested = other.isQuitRequested();
         _quitReason = other.getQuitReason();
+        _welcomed = other.isWelcomed();
     }
     return (*this);
 }
@@ -113,6 +115,16 @@ const std::string& Client::getQuitReason() const
     return (_quitReason);
 }
 
+bool Client::isWelcomed() const
+{
+    return (_welcomed);
+}
+
+void Client::setWelcomed(bool welcomed)
+{
+    _welcomed = welcomed;
+}
+
 bool Client::isAuthenticated() const
 {
     return (_passOk && !_nick.empty() && !_user.empty());
@@ -120,6 +132,12 @@ bool Client::isAuthenticated() const
 
 std::string Client::getPrefix() const
 {
-    // Since irssi doesn't strictly check the hostname, I've set it to “localhost”
-    return _nick + "!" + _user + "@localhost";
+    return _nick + "!" + _user + "@" + getHost();
+}
+
+std::string Client::getHost() const
+{
+    // Since irssi doesn't strictly check the hostname, it's set to "localhost".
+    // Keep this the single source of the host so the prefix and the 001 host never diverge.
+    return "localhost";
 }

@@ -40,7 +40,7 @@ drain() {
 # --- \n単独終端で登録できること ---
 exec 3<>/dev/tcp/127.0.0.1/$PORT
 printf 'PASS %s\nNICK alice\nUSER alice 0 * :Alice\n' "$PASSWORD" >&3
-resp=$(read_lines 3 1)
+resp=$(read_lines 3 4)
 check "\\n単独終端でWelcome(001)を受信" "1" "$(echo "$resp" | grep -c ' 001 ')"
 
 printf 'PING hello\n' >&3

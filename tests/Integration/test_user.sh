@@ -18,7 +18,7 @@ exec 3<&- 3>&-
 # 正常な登録でWelcome(001)を受信
 exec 3<>/dev/tcp/127.0.0.1/$PORT
 printf 'PASS %s\r\nNICK alice\r\nUSER alice 0 * :Alice\r\n' "$PASSWORD" >&3
-resp=$(read_lines 3 1)
+resp=$(read_lines 3 4)
 check "正常登録でRPL_WELCOME(001)を受信" "1" "$(echo "$resp" | grep -c ' 001 ')"
 
 # 登録後にUSER → ERR_ALREADYREGISTRED(462)
