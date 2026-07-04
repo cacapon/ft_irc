@@ -113,6 +113,8 @@ Message Commands::parseLine(const std::string& line)
         pos++;
     msg.command = line.substr(start, pos - start);
 
+    for (std::string::iterator it = msg.command.begin(); it != msg.command.end(); ++it)
+        *it = std::toupper(static_cast<unsigned char>(*it));
     // get params
     while (pos < line.size())
     {
