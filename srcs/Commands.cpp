@@ -852,7 +852,11 @@ void Commands::dispatch(Server& srv, Client& client, const std::string& line)
         table["TOPIC"] = &Commands::handleTopic;
     }
     Message msg = parseLine(line);
+    if (msg.command.empty())
+        return;
     std::map<std::string, HandlerFunc>::const_iterator it = table.find(msg.command);
     if (it != table.end())
         it->second(srv, client, msg.params);
+    else
+        srv.sendToFd(client.getFd(), Replies::ERR_UNKNOWNCOMMAND(client.getNick(), msg.command));
 }
