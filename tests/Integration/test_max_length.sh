@@ -32,7 +32,8 @@ repeat() {
 # --- alice 接続・登録 ---
 exec 3<>/dev/tcp/127.0.0.1/$PORT
 printf 'PASS %s\r\nNICK alice\r\nUSER alice 0 * :Alice\r\n' "$PASSWORD" >&3
-resp=$(read_lines 3 1)
+# 登録完了時は001-004の4行が送られる
+resp=$(read_lines 3 4)
 check "alice登録でWelcome(001)を受信" "1" "$(echo "$resp" | grep -c ' 001 ')"
 
 # --- 超長行(600文字)の直後に PING → 生存＆再同期の確認 ---
@@ -53,13 +54,13 @@ exec 3<&- 3>&-
 # --- truncate 確認: 700文字本文の PRIVMSG が 510 で切られて中継される ---
 exec 4<>/dev/tcp/127.0.0.1/$PORT
 printf 'PASS %s\r\nNICK bob\r\nUSER bob 0 * :Bob\r\n' "$PASSWORD" >&4
-read_lines 4 1 >/dev/null
+read_lines 4 4 >/dev/null
 printf 'JOIN #room\r\n' >&4
 read_lines 4 1 >/dev/null
 
 exec 5<>/dev/tcp/127.0.0.1/$PORT
 printf 'PASS %s\r\nNICK carol\r\nUSER carol 0 * :Carol\r\n' "$PASSWORD" >&5
-read_lines 5 1 >/dev/null
+read_lines 5 4 >/dev/null
 printf 'JOIN #room\r\n' >&5
 read_lines 5 1 >/dev/null
 

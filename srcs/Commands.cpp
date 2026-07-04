@@ -1,7 +1,5 @@
 #include "Commands.hpp"
 
-#include <sys/socket.h>
-
 #include <cctype>
 #include <cstddef>
 #include <cstdlib>
@@ -42,6 +40,25 @@ bool Commands::isValidNick(const std::string& nick)
     }
 
     return true;
+}
+
+// PASS/NICK/USERはどの順序でも来得るため、各ハンドラの末尾から呼び出して
+// 揃った時点で001-004を送る。二重送信はClientの_welcomedフラグで防ぐ。
+void Commands::tryRegister(Server& srv, Client& client)
+{
+    if (client.isWelcomed() || !client.isAuthenticated())
+        return;
+
+    std::string nick = client.getNick();
+    std::string user = client.getUser();
+    // getPrefix()が組み立てるホスト表記と一致させる
+    std::string host = "localhost";
+
+    srv.sendToFd(client.getFd(), Replies::RPL_WELCOME(nick, user, host));
+    srv.sendToFd(client.getFd(), Replies::RPL_YOURHOST(nick));
+    srv.sendToFd(client.getFd(), Replies::RPL_CREATED(nick, "N/A"));
+    srv.sendToFd(client.getFd(), Replies::RPL_MYINFO(nick));
+    client.setWelcomed(true);
 }
 
 // private
@@ -147,6 +164,7 @@ void Commands::handlePass(Server& srv, Client& client, std::vector<std::string>&
     client.setPassOk(ok);
     if (!ok)
         srv.sendToFd(client.getFd(), Replies::ERR_PASSWDMISMATCH(target));
+    tryRegister(srv, client);
 }
 void Commands::handleNick(Server& srv, Client& client, std::vector<std::string>& params)
 {
@@ -176,6 +194,7 @@ void Commands::handleNick(Server& srv, Client& client, std::vector<std::string>&
         }
     }
     client.setNick(nick);
+    tryRegister(srv, client);
 }
 void Commands::handleUser(Server& srv, Client& client, std::vector<std::string>& params)
 {
@@ -197,11 +216,7 @@ void Commands::handleUser(Server& srv, Client& client, std::vector<std::string>&
     std::string user = params[0];
     client.setUser(user);
 
-    if (client.isAuthenticated())
-    {
-        std::string reply = ":server 001 " + client.getNick() + " :Welcome!\r\n";
-        send(client.getFd(), reply.c_str(), reply.size(), 0);
-    }
+    tryRegister(srv, client);
 }
 
 void Commands::handleJoin(Server& srv, Client& client, std::vector<std::string>& params)

@@ -22,6 +22,8 @@ private:  // Methods
 
     static void recordAppliedMode(std::string& appliedModes, char& lastSign, char modeChar, bool adding);
     static bool isValidNick(const std::string& nick);
+    // PASS/NICK/USERのどの順序で揃っても登録完了を検知できるよう、各ハンドラ末尾から呼ぶ共通処理
+    static void tryRegister(Server& srv, Client& client);
 
     static void handlePing(Server&, Client&, std::vector<std::string>&);
     static void handlePass(Server&, Client&, std::vector<std::string>&);

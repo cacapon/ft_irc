@@ -17,6 +17,8 @@ private:
     // after the current dispatch finishes.
     bool _quitRequested;
     std::string _quitReason;
+    // 001-004送信済みかどうか。NICK再変更時などにtryRegisterが再実行されても多重送信しないためのフラグ
+    bool _welcomed;
 
 public:
     Client();
@@ -46,6 +48,9 @@ public:
     void requestQuit(const std::string& reason);
     bool isQuitRequested() const;
     const std::string& getQuitReason() const;
+
+    bool isWelcomed() const;
+    void setWelcomed(bool welcomed);
 
     bool isAuthenticated() const;
 
