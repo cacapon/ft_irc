@@ -236,13 +236,18 @@ bool Server::receiveData(size_t i)
         client.appendRecvBuf(std::string(buf, bytes));
 
         size_t pos;
-        while ((pos = client.getRecvBuf().find("\r\n")) != std::string::npos)
+        // irssi uses '\r\n' while a bare nc (Enter sends only '\n') terminates
+        // lines with '\n', so treat the '\n' position as the delimiter and strip
+        // a trailing CR from the line for the '\r\n' case.
+        while ((pos = client.getRecvBuf().find('\n')) != std::string::npos)
         {
             std::string line = client.getRecvBuf().substr(0, pos);
+            if (!line.empty() && line[line.size() - 1] == '\r')
+                line.erase(line.size() - 1);
             client.eraseRecvBuf(pos);
 
-            // The CRLF closing an over-long line: its head was already truncated
-            // and dispatched, so just drop this trailing remainder.
+            // The line terminator closing an over-long line: its head was already
+            // truncated and dispatched, so just drop this trailing remainder.
             if (client.isOverLength())
             {
                 client.setOverLength(false);
@@ -264,10 +269,10 @@ bool Server::receiveData(size_t i)
         }
 
         // The loop above consumed every complete line, so the buffer now holds
-        // no CRLF. If what remains still exceeds the limit, it is the head of an
-        // over-long line (never a valid command): dispatch its truncated head
-        // once, then discard the rest until CRLF arrives. This also bounds the
-        // buffer against a client that never sends CRLF.
+        // no line terminator. If what remains still exceeds the limit, it is the
+        // head of an over-long line (never a valid command): dispatch its truncated
+        // head once, then discard the rest until the terminating LF arrives. This
+        // also bounds the buffer against a client that never sends a newline.
         if (client.getRecvBuf().size() > MAX_MSG_LEN)
         {
             if (!client.isOverLength())
