@@ -17,9 +17,9 @@ printf 'PASS %s\r\nNICK alice\r\nUSER alice 0 * :Alice\r\n' "$PASSWORD" >&3
 resp=$(read_lines 3 4)
 check "alice登録でWelcome(001)を受信" "1" "$(echo "$resp" | grep -c ' 001 ')"
 
-# JOIN（トピック未設定: JOIN通知+RPL_NOTOPICの2行）
+# JOIN（トピック未設定: JOIN通知+RPL_NOTOPIC+NAMES(353)+ENDOFNAMES(366)の4行）
 printf 'JOIN #test\r\n' >&3
-resp=$(read_lines 3 2)
+resp=$(read_lines 3 4)
 check "JOIN直後にRPL_NOTOPIC(331)を受信" "1" \
     "$(echo "$resp" | grep -c ':ircserv 331 alice #test :No topic is set')"
 

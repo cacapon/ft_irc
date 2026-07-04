@@ -13,7 +13,7 @@ exec 3<>/dev/tcp/127.0.0.1/$PORT
 printf 'PASS %s\r\nNICK alice\r\nUSER alice 0 * :Alice\r\n' "$PASSWORD" >&3
 read_lines 3 4 > /dev/null
 printf 'JOIN #test\r\n' >&3
-read_lines 3 2 > /dev/null
+read_lines 3 4 > /dev/null  # JOIN + NOTOPIC + NAMES(353) + ENDOFNAMES(366)
 
 # MODEパラメータなし → ERR_NEEDMOREPARAMS(461)
 printf 'MODE\r\n' >&3
@@ -35,7 +35,7 @@ exec 4<>/dev/tcp/127.0.0.1/$PORT
 printf 'PASS %s\r\nNICK bob\r\nUSER bob 0 * :Bob\r\n' "$PASSWORD" >&4
 read_lines 4 4 > /dev/null
 printf 'JOIN #test\r\n' >&4
-read_lines 4 2 > /dev/null
+read_lines 4 4 > /dev/null  # JOIN + NOTOPIC + NAMES(353) + ENDOFNAMES(366)
 read_lines 3 1 > /dev/null  # aliceにbobのJOIN通知が届く、破棄
 
 # bob（非オペレータ）がMODE設定 → ERR_CHANOPRIVSNEEDED(482)

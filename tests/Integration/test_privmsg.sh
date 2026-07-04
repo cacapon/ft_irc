@@ -36,14 +36,14 @@ check "PRIVMSGで存在しないニックでERR_NOSUCHNICK(401)" "1" "$(echo "$r
 # PRIVMSGで参加していないチャンネル → ERR_CANNOTSENDTOCHAN(404)
 # bobが#testチャンネルを作成、aliceは参加せずにメッセージ送信
 printf 'JOIN #test\r\n' >&4
-read_lines 4 2 > /dev/null
+read_lines 4 4 > /dev/null  # JOIN + NOTOPIC + NAMES(353) + ENDOFNAMES(366)
 printf 'PRIVMSG #test :hello\r\n' >&3
 resp=$(read_lines 3 1)
 check "参加していないチャンネルへのPRIVMSGでERR_CANNOTSENDTOCHAN(404)" "1" "$(echo "$resp" | grep -c ' 404 ')"
 
 # PRIVMSGでチャンネルへのメッセージ（送信者以外が受信）
 printf 'JOIN #test\r\n' >&3
-resp=$(read_lines 3 2)  # alice: JOIN + NOTOPIC
+resp=$(read_lines 3 4)  # alice: JOIN + NOTOPIC + NAMES(353) + ENDOFNAMES(366)
 read_lines 4 1 > /dev/null  # bobにaliceのJOIN通知が届く、破棄
 
 printf 'PRIVMSG #test :hello channel\r\n' >&3

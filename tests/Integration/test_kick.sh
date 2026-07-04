@@ -30,7 +30,7 @@ check "存在しないチャンネルのKICKでERR_NOSUCHCHANNEL(403)" "1" "$(ec
 
 # aliceが#testを作成（alice=オペレータ）
 printf 'JOIN #test\r\n' >&3
-read_lines 3 2 > /dev/null
+read_lines 3 4 > /dev/null  # JOIN + NOTOPIC + NAMES(353) + ENDOFNAMES(366)
 
 # bobが#testに未参加でKICK → ERR_NOTONCHANNEL(442)
 printf 'KICK #test alice\r\n' >&4
@@ -39,7 +39,7 @@ check "未参加チャンネルでのKICKでERR_NOTONCHANNEL(442)" "1" "$(echo "
 
 # bobが#testに参加
 printf 'JOIN #test\r\n' >&4
-read_lines 4 2 > /dev/null
+read_lines 4 4 > /dev/null  # JOIN + NOTOPIC + NAMES(353) + ENDOFNAMES(366)
 read_lines 3 1 > /dev/null  # aliceにbobのJOIN通知が届く、破棄
 
 # bob（非オペレータ）がKICK → ERR_CHANOPRIVSNEEDED(482)

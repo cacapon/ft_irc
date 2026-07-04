@@ -41,6 +41,31 @@ check "使用中のニックネームでERR_NICKNAMEINUSE(433)" "1" "$(echo "$re
 exec 4<&- 4>&-
 exec 3<&- 3>&-
 
+# 登録済みクライアントのNICK変更が本人と同席チャンネルのメンバーに通知される
+exec 3<>/dev/tcp/127.0.0.1/$PORT
+printf 'PASS %s\r\nNICK alice\r\nUSER alice 0 * :Alice\r\n' "$PASSWORD" >&3
+read_lines 3 4 > /dev/null            # welcome 001-004
+printf 'JOIN #room\r\n' >&3
+read_lines 3 4 > /dev/null            # JOIN + 331 + 353 + 366
+
+exec 4<>/dev/tcp/127.0.0.1/$PORT
+printf 'PASS %s\r\nNICK bob\r\nUSER bob 0 * :Bob\r\n' "$PASSWORD" >&4
+read_lines 4 4 > /dev/null            # welcome 001-004
+printf 'JOIN #room\r\n' >&4
+read_lines 4 4 > /dev/null            # bob側: JOIN + 331 + 353 + 366
+read_lines 3 1 > /dev/null            # alice側: bobのJOIN通知を消費
+
+# aliceがnickを変更
+printf 'NICK alice2\r\n' >&3
+resp=$(read_lines 3 1)
+check "NICK変更で本人に :old NICK new が届く" "1" \
+    "$(echo "$resp" | grep -c ':alice!alice@localhost NICK :alice2')"
+resp=$(read_lines 4 1)
+check "NICK変更が同席チャンネルのメンバーに届く" "1" \
+    "$(echo "$resp" | grep -c ':alice!alice@localhost NICK :alice2')"
+exec 3<&- 3>&-
+exec 4<&- 4>&-
+
 kill $SERVER_PID 2>/dev/null
 wait $SERVER_PID 2>/dev/null
 rm -f /tmp/ircserv_nick_out.txt

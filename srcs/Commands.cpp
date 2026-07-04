@@ -201,6 +201,26 @@ void Commands::handleNick(Server& srv, Client& client, std::vector<std::string>&
             return;
         }
     }
+
+    // A no-op nick change (same nick) needs no state update or broadcast.
+    if (nick == client.getNick())
+        return;
+
+    // When an already-registered client changes its nick, echo the change to
+    // itself and to everyone sharing a channel so their views stay consistent.
+    // Built with the old prefix before setNick; done only post-registration so
+    // the initial nick assignment during registration is not broadcast.
+    if (client.isWelcomed())
+    {
+        std::string notify = ":" + client.getPrefix() + " NICK :" + nick + "\r\n";
+        srv.sendToFd(client.getFd(), notify);
+        std::map<std::string, Channel>& channels = srv.getChannels();
+        for (std::map<std::string, Channel>::iterator it = channels.begin(); it != channels.end(); ++it)
+        {
+            if (it->second.isMember(client.getFd()))
+                srv.sendToChannel(it->second, notify, client.getFd());
+        }
+    }
     client.setNick(nick);
     tryRegister(srv, client);
 }
@@ -315,6 +335,25 @@ void Commands::handleJoin(Server& srv, Client& client, std::vector<std::string>&
     {
         srv.sendToFd(client.getFd(), Replies::RPL_NOTOPIC(client.getNick(), chanName));
     }
+
+    // RFC 2812 requires 353/366 right after JOIN so the joining client can build its
+    // nicklist; reference clients (e.g. irssi) rely on this instead of the JOIN message alone.
+    const std::set<int>& members = ch.getMembers();
+    std::map<int, Client>& clients = srv.getClients();
+    std::string names;
+    for (std::set<int>::const_iterator it = members.begin(); it != members.end(); ++it)
+    {
+        std::map<int, Client>::iterator clientIt = clients.find(*it);
+        if (clientIt == clients.end())
+            continue;
+        if (!names.empty())
+            names += " ";
+        if (ch.isOperator(*it))
+            names += "@";
+        names += clientIt->second.getNick();
+    }
+    srv.sendToFd(client.getFd(), Replies::RPL_NAMREPLY(client.getNick(), chanName, names));
+    srv.sendToFd(client.getFd(), Replies::RPL_ENDOFNAMES(client.getNick(), chanName));
     return;
 }
 

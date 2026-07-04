@@ -23,11 +23,14 @@ printf 'JOIN badchan\r\n' >&3
 resp=$(read_lines 3 1)
 check "不正なチャンネル名でERR_NOSUCHCHANNEL(403)" "1" "$(echo "$resp" | grep -c ' 403 ')"
 
-# 正常JOIN（新規チャンネル）→ JOIN通知 + RPL_NOTOPIC(331)
+# 正常JOIN（新規チャンネル）→ JOIN通知 + RPL_NOTOPIC(331) + RPL_NAMREPLY(353) + RPL_ENDOFNAMES(366)
 printf 'JOIN #test\r\n' >&3
-resp=$(read_lines 3 2)
+resp=$(read_lines 3 4)
 check "正常JOINでJOIN通知を受信" "1" "$(echo "$resp" | grep -c ' JOIN ')"
 check "JOIN後にRPL_NOTOPIC(331)を受信" "1" "$(echo "$resp" | grep -c ' 331 ')"
+check "JOIN後にRPL_NAMREPLY(353)で自分のみ@付きを受信" "1" \
+    "$(echo "$resp" | grep -c ' 353 alice = #test :@alice')"
+check "JOIN後にRPL_ENDOFNAMES(366)を受信" "1" "$(echo "$resp" | grep -c ' 366 ')"
 
 # bob登録
 exec 4<>/dev/tcp/127.0.0.1/$PORT
@@ -37,7 +40,7 @@ read_lines 4 4 > /dev/null
 # invite-onlyチャンネルテスト
 # aliceが#inviteチャンネルを作成してinvite-onlyに設定
 printf 'JOIN #invite\r\n' >&3
-read_lines 3 2 > /dev/null
+read_lines 3 4 > /dev/null  # JOIN + NOTOPIC + NAMES(353) + ENDOFNAMES(366)
 printf 'MODE #invite +i\r\n' >&3
 read_lines 3 1 > /dev/null
 
@@ -49,7 +52,7 @@ check "invite-onlyチャンネルへのJOINでERR_INVITEONLYCHAN(473)" "1" "$(ec
 # キー付きチャンネルテスト
 # aliceが#keychanを作成してキーを設定
 printf 'JOIN #keychan\r\n' >&3
-read_lines 3 2 > /dev/null
+read_lines 3 4 > /dev/null  # JOIN + NOTOPIC + NAMES(353) + ENDOFNAMES(366)
 printf 'MODE #keychan +k secret\r\n' >&3
 read_lines 3 1 > /dev/null
 
@@ -63,16 +66,18 @@ printf 'JOIN #keychan wrongkey\r\n' >&4
 resp=$(read_lines 4 1)
 check "間違ったキーでJOINするとERR_BADCHANNELKEY(475)" "1" "$(echo "$resp" | grep -c ' 475 ')"
 
-# bobが正しいキーで参加 → 成功
+# bobが正しいキーで参加 → 成功（既存メンバーaliceを含むNAMESリストを受信）
 printf 'JOIN #keychan secret\r\n' >&4
-resp=$(read_lines 4 2)
+resp=$(read_lines 4 4)
 check "正しいキーでJOIN成功" "1" "$(echo "$resp" | grep -c ' JOIN ')"
+check "既存チャンネルJOINでRPL_NAMREPLY(353)に@付きオペレータと自分を受信" "1" \
+    "$(echo "$resp" | grep -c ' 353 bob = #keychan :@alice bob')"
 read_lines 3 1 > /dev/null  # aliceにbobのJOIN通知が届く、破棄
 
 # 人数上限チャンネルテスト
 # aliceが#fullチャンネルを作成して上限を1に設定
 printf 'JOIN #full\r\n' >&3
-read_lines 3 2 > /dev/null
+read_lines 3 4 > /dev/null  # JOIN + NOTOPIC + NAMES(353) + ENDOFNAMES(366)
 printf 'MODE #full +l 1\r\n' >&3
 read_lines 3 1 > /dev/null
 
