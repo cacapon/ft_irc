@@ -113,6 +113,8 @@ Message Commands::parseLine(const std::string& line)
         pos++;
     msg.command = line.substr(start, pos - start);
 
+    for (std::string::iterator it = msg.command.begin(); it != msg.command.end(); ++it)
+        *it = std::toupper(static_cast<unsigned char>(*it));
     // get params
     while (pos < line.size())
     {
@@ -571,13 +573,22 @@ void Commands::handleMode(Server& srv, Client& cli, std::vector<std::string>& pa
                     srv.sendToFd(cli.getFd(), Replies::ERR_NEEDMOREPARAMS(cli.getNick(), "MODE"));
                     break;
                 }
-                int limit = atoi(params[argldx++].c_str());
-                if (limit > 0)
+                const std::string& limitStr = params[argldx++];
+                bool valid = !limitStr.empty();
+                for (size_t j = 0; j < limitStr.size() && valid; ++j)
                 {
-                    ch.setLimit(limit);
-                    recordAppliedMode(appliedModes, lastSign, c, adding);
-                    appliedArgs += " " + params[argldx - 1];
+                    if (!std::isdigit(static_cast<unsigned char>(limitStr[j])))
+                        valid = false;
                 }
+                if (!valid)
+                {
+                    srv.sendToFd(cli.getFd(), Replies::ERR_UNKNOWNMODE(cli.getNick(), c, ch.getName()));
+                    break;
+                }
+                int limit = atoi(limitStr.c_str());
+                ch.setLimit(limit);
+                recordAppliedMode(appliedModes, lastSign, c, adding);
+                appliedArgs += " " + limitStr;
                 break;
             }
             case 'o':
@@ -891,7 +902,11 @@ void Commands::dispatch(Server& srv, Client& client, const std::string& line)
         table["TOPIC"] = &Commands::handleTopic;
     }
     Message msg = parseLine(line);
+    if (msg.command.empty())
+        return;
     std::map<std::string, HandlerFunc>::const_iterator it = table.find(msg.command);
     if (it != table.end())
         it->second(srv, client, msg.params);
+    else
+        srv.sendToFd(client.getFd(), Replies::ERR_UNKNOWNCOMMAND(client.getNick(), msg.command));
 }
