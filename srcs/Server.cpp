@@ -236,9 +236,13 @@ bool Server::receiveData(size_t i)
         client.appendRecvBuf(std::string(buf, bytes));
 
         size_t pos;
-        while ((pos = client.getRecvBuf().find("\r\n")) != std::string::npos)
+        // irssi等は\r\n、素のnc(Enterは\nのみ送出)は\n単独で行を終端するため、
+        // \nの位置を行区切りとして扱い、\r\nの場合はCRのみをlineから落とす。
+        while ((pos = client.getRecvBuf().find('\n')) != std::string::npos)
         {
             std::string line = client.getRecvBuf().substr(0, pos);
+            if (!line.empty() && line[line.size() - 1] == '\r')
+                line.erase(line.size() - 1);
             client.eraseRecvBuf(pos);
 
             // The CRLF closing an over-long line: its head was already truncated

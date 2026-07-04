@@ -75,10 +75,11 @@ void Client::appendRecvBuf(const std::string& data)
     _recvBuf += data;
 }
 
-// Removes the \r\n along with the consumed portion
+// posは行末の\nのインデックス(呼び出し側がfind('\n')で検出)。
+// \nまでを消費することで、\r\n終端・\n単独終端の両方に対応する。
 void Client::eraseRecvBuf(size_t pos)
 {
-    _recvBuf.erase(0, pos + 2);
+    _recvBuf.erase(0, pos + 1);
 }
 
 void Client::clearRecvBuf()
