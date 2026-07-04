@@ -80,9 +80,10 @@ void Client::appendSendBuf(const std::string& data)
 {
     _sendBuf += data;
 }
-void Client::eraseSendBuf(size_t pos)
+// n is the number of bytes actually sent (not an index); erase exactly n bytes.
+void Client::eraseSendBuf(size_t n)
 {
-    _sendBuf.erase(0, pos + 1);
+    _sendBuf.erase(0, n);
 }
 void Client::clearSendBuf()
 {

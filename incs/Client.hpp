@@ -42,7 +42,7 @@ public:
 
     // Send Buffer helper method.
     void appendSendBuf(const std::string& data);
-    void eraseSendBuf(size_t pos);
+    void eraseSendBuf(size_t n);
     void clearSendBuf();
     bool hasPendingSend() const;
 
