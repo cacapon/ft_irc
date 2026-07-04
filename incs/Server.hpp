@@ -30,11 +30,14 @@ private:  // Methods
 
     // helper methods
     void addPollFd(int);
+    void setPollEvent(int, short);
+    void clearPollEvent(int, short);
 
     // pollLoop Utils.
     bool acceptClient();
     void disconnectClient(size_t i, std::string reason);
     bool receiveData(size_t);
+    bool handleWrite(size_t);
 
 public:
     Server();
@@ -52,4 +55,5 @@ public:
 
     void sendToFd(int fd, const std::string& msg);
     void sendToChannel(const Channel& ch, const std::string& msg, int excludeFd = -1);
+    void queueSend(int, const std::string&);
 };
