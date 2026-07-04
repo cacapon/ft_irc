@@ -56,13 +56,14 @@ exec 4<>/dev/tcp/127.0.0.1/$PORT
 printf 'PASS %s\r\nNICK bob\r\nUSER bob 0 * :Bob\r\n' "$PASSWORD" >&4
 read_lines 4 4 >/dev/null
 printf 'JOIN #room\r\n' >&4
-read_lines 4 1 >/dev/null
+read_lines 4 4 >/dev/null            # JOIN + 331 + 353 + 366
 
 exec 5<>/dev/tcp/127.0.0.1/$PORT
 printf 'PASS %s\r\nNICK carol\r\nUSER carol 0 * :Carol\r\n' "$PASSWORD" >&5
 read_lines 5 4 >/dev/null
 printf 'JOIN #room\r\n' >&5
-read_lines 5 1 >/dev/null
+read_lines 5 4 >/dev/null            # carol: JOIN + 331 + 353 + 366
+read_lines 4 1 >/dev/null            # bob: carolのJOIN通知を消費
 
 # carol が本文700文字を送信 → bob が受信する行の 'Z' 個数が 510 未満なら truncate 成功
 printf 'PRIVMSG #room :%s\r\n' "$(head -c 700 /dev/zero | tr '\0' 'Z')" >&5

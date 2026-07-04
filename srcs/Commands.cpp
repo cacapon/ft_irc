@@ -201,6 +201,11 @@ void Commands::handleNick(Server& srv, Client& client, std::vector<std::string>&
             return;
         }
     }
+
+    // A no-op nick change (same nick) needs no state update or broadcast.
+    if (nick == client.getNick())
+        return;
+
     // When an already-registered client changes its nick, echo the change to
     // itself and to everyone sharing a channel so their views stay consistent.
     // Built with the old prefix before setNick; done only post-registration so
