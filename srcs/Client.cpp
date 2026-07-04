@@ -1,9 +1,9 @@
 #include "Client.hpp"
 
-Client::Client() : _fd(-1), _passOk(false), _overLength(false)
+Client::Client() : _fd(-1), _passOk(false), _overLength(false), _quitRequested(false)
 {
 }
-Client::Client(int fd) : _fd(fd), _passOk(false), _overLength(false)
+Client::Client(int fd) : _fd(fd), _passOk(false), _overLength(false), _quitRequested(false)
 {
 }
 Client::Client(const Client& src)
@@ -12,7 +12,9 @@ Client::Client(const Client& src)
       _user(src.getUser()),
       _recvBuf(src.getRecvBuf()),
       _passOk(src.isPassOk()),
-      _overLength(src.isOverLength())
+      _overLength(src.isOverLength()),
+      _quitRequested(src.isQuitRequested()),
+      _quitReason(src.getQuitReason())
 {
 }
 Client& Client::operator=(const Client& other)
@@ -25,6 +27,8 @@ Client& Client::operator=(const Client& other)
         _recvBuf = other.getRecvBuf();
         _passOk = other.isPassOk();
         _overLength = other.isOverLength();
+        _quitRequested = other.isQuitRequested();
+        _quitReason = other.getQuitReason();
     }
     return (*this);
 }
@@ -90,6 +94,22 @@ bool Client::isOverLength() const
 void Client::setOverLength(bool over)
 {
     _overLength = over;
+}
+
+void Client::requestQuit(const std::string& reason)
+{
+    _quitRequested = true;
+    _quitReason = reason;
+}
+
+bool Client::isQuitRequested() const
+{
+    return (_quitRequested);
+}
+
+const std::string& Client::getQuitReason() const
+{
+    return (_quitReason);
 }
 
 bool Client::isAuthenticated() const

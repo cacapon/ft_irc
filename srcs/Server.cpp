@@ -163,15 +163,46 @@ bool Server::acceptClient()
 }
 
 /**
- * @brief Disconnect client.
+ * @brief Disconnect client. Removes the client from every channel it belongs
+ * to and broadcasts QUIT before closing the fd, since a closed fd can be
+ * reused by the OS for the next accept() and would otherwise let the new
+ * connection inherit the previous client's channel membership/operator status.
  *
- * @param i
+ * @param i index into _pollfds of the client being disconnected
+ * @param reason QUIT reason shown to other channel members
  */
-void Server::disconnectClient(size_t i)
+void Server::disconnectClient(size_t i, const std::string& reason)
 {
-    std::cout << "Client disconnected: fd=" << _pollfds[i].fd << std::endl;
-    close(_pollfds[i].fd);
-    _clients.erase(_pollfds[i].fd);
+    int fd = _pollfds[i].fd;
+    std::map<int, Client>::iterator clientIt = _clients.find(fd);
+    bool notifyChannels = (clientIt != _clients.end() && clientIt->second.isAuthenticated());
+    std::string quitMsg;
+    if (notifyChannels)
+        quitMsg = ":" + clientIt->second.getPrefix() + " QUIT :" + reason + "\r\n";
+
+    // erase(it++) イディオム: 削除後は it が無効化されるため、post-increment で
+    // 次のイテレータを先に確保してから erase する (C++98 の std::map に対する定石)。
+    for (std::map<std::string, Channel>::iterator it = _channels.begin(); it != _channels.end();)
+    {
+        Channel& ch = it->second;
+        if (ch.isMember(fd))
+        {
+            if (notifyChannels)
+                sendToChannel(ch, quitMsg, fd);
+            ch.removeMember(fd);
+            ch.removeOperator(fd);
+        }
+        ch.removeInvited(fd);
+
+        if (ch.getMembers().empty())
+            _channels.erase(it++);
+        else
+            ++it;
+    }
+
+    std::cout << "Client disconnected: fd=" << fd << std::endl;
+    close(fd);
+    _clients.erase(fd);
     _pollfds.erase(_pollfds.begin() + i);
 }
 
@@ -188,7 +219,7 @@ bool Server::receiveData(size_t i)
     int bytes = recv(_pollfds[i].fd, buf, sizeof(buf) - 1, 0);
     if (bytes <= 0)
     {
-        disconnectClient(i);
+        disconnectClient(i, "Connection closed");
         return true;
     }
     else
@@ -219,6 +250,14 @@ bool Server::receiveData(size_t i)
             if (line.size() > MAX_CONTENT_LEN)
                 line.resize(MAX_CONTENT_LEN);
             Commands::dispatch(*this, client, line);
+
+            // QUIT はフラグを立てるだけなので、ここで実際の切断処理を行う。
+            // 切断後は _clients/_pollfds が変化するため client 参照には触れない。
+            if (client.isQuitRequested())
+            {
+                disconnectClient(i, client.getQuitReason());
+                return true;
+            }
         }
 
         // The loop above consumed every complete line, so the buffer now holds
