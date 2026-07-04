@@ -180,8 +180,8 @@ void Server::disconnectClient(size_t i, std::string reason)
     if (notifyChannels)
         quitMsg = ":" + clientIt->second.getPrefix() + " QUIT :" + reason + "\r\n";
 
-    // erase(it++) イディオム: 削除後は it が無効化されるため、post-increment で
-    // 次のイテレータを先に確保してから erase する (C++98 の std::map に対する定石)。
+    // erase(it++) idiom: erasing invalidates it, so post-increment secures the
+    // next iterator before the erase (the standard approach for std::map in C++98).
     for (std::map<std::string, Channel>::iterator it = _channels.begin(); it != _channels.end();)
     {
         Channel& ch = it->second;
@@ -191,8 +191,8 @@ void Server::disconnectClient(size_t i, std::string reason)
                 sendToChannel(ch, quitMsg, fd);
             ch.removeMember(fd);
         }
-        // PART/KICK側がremoveOperatorを呼ばずmemberのみ外すバグにより_operatorsに
-        // fdが残留している場合があるため、isMember判定に関係なく無条件で除去する。
+        // PART/KICK remove only the member and not the operator, so an fd may
+        // linger in _operators; remove it unconditionally regardless of isMember.
         ch.removeOperator(fd);
         ch.removeInvited(fd);
 
@@ -253,8 +253,9 @@ bool Server::receiveData(size_t i)
                 line.resize(MAX_CONTENT_LEN);
             Commands::dispatch(*this, client, line);
 
-            // QUIT はフラグを立てるだけなので、ここで実際の切断処理を行う。
-            // 切断後は _clients/_pollfds が変化するため client 参照には触れない。
+            // QUIT only raises a flag, so perform the actual disconnect here.
+            // After disconnecting, _clients/_pollfds change, so the client
+            // reference must not be touched afterwards.
             if (client.isQuitRequested())
             {
                 disconnectClient(i, client.getQuitReason());

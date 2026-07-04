@@ -802,8 +802,8 @@ void Commands::handleTopic(Server& srv, Client& cli, std::vector<std::string>& p
 
 void Commands::handleQuit(Server&, Client& client, std::vector<std::string>& params)
 {
-    // ブロードキャストとチャンネルからの除去は disconnectClient に一元化しているため、
-    // ここでは切断理由を記録してフラグを立てるだけにする。
+    // Broadcasting and channel removal are centralized in disconnectClient,
+    // so here we only record the reason and raise the quit flag.
     std::string reason = params.empty() ? "Client Quit" : params[0];
     client.requestQuit(reason);
 }
