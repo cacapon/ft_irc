@@ -12,6 +12,11 @@ private:
     // True while discarding the remainder of a line that already exceeded the
     // RFC 2812 512-byte limit, until the terminating CRLF is seen.
     bool _overLength;
+    // Erasing the pollfd the moment QUIT arrives would corrupt receiveData's
+    // loop index, so we only raise a flag here and let the server disconnect
+    // after the current dispatch finishes.
+    bool _quitRequested;
+    std::string _quitReason;
 
 public:
     Client();
@@ -37,6 +42,10 @@ public:
 
     bool isOverLength() const;
     void setOverLength(bool over);
+
+    void requestQuit(const std::string& reason);
+    bool isQuitRequested() const;
+    const std::string& getQuitReason() const;
 
     bool isAuthenticated() const;
 

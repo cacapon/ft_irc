@@ -800,6 +800,14 @@ void Commands::handleTopic(Server& srv, Client& cli, std::vector<std::string>& p
     }
 }
 
+void Commands::handleQuit(Server&, Client& client, std::vector<std::string>& params)
+{
+    // Broadcasting and channel removal are centralized in disconnectClient,
+    // so here we only record the reason and raise the quit flag.
+    std::string reason = params.empty() ? "Client Quit" : params[0];
+    client.requestQuit(reason);
+}
+
 // public
 void Commands::dispatch(Server& srv, Client& client, const std::string& line)
 {
@@ -817,6 +825,7 @@ void Commands::dispatch(Server& srv, Client& client, const std::string& line)
         table["MODE"] = &Commands::handleMode;
         table["KICK"] = &Commands::handleKick;
         table["INVITE"] = &Commands::handleInvite;
+        table["QUIT"] = &Commands::handleQuit;
         table["TOPIC"] = &Commands::handleTopic;
     }
     Message msg = parseLine(line);
