@@ -6,12 +6,14 @@ int g_failed = 0;
 
 void run_parser_tests();
 void run_replies_tests();
+void run_client_tests();
 // Add a declaration here every time you add a new test
 
 int main()
 {
     run_parser_tests();
     run_replies_tests();
+    run_client_tests();
 
     std::cout << "\n--- " << g_passed << " passed, " << g_failed << " failed ---" << std::endl;
     return g_failed > 0 ? 1 : 0;
