@@ -7,6 +7,7 @@ private:
     int _fd;
     std::string _nick;
     std::string _user;
+    std::string _sendBuf;
     std::string _recvBuf;
     bool _passOk;
     // True while discarding the remainder of a line that already exceeded the
@@ -33,10 +34,17 @@ public:
     std::string getUser() const;
     bool isPassOk() const;
     const std::string& getRecvBuf() const;
+    const std::string& getSendBuf() const;
 
     void setNick(const std::string& nick);
     void setUser(const std::string& user);
     void setPassOk(bool ok);
+
+    // Send Buffer helper method.
+    void appendSendBuf(const std::string& data);
+    void eraseSendBuf(size_t pos);
+    void clearSendBuf();
+    bool hasPendingSend() const;
 
     // Since `RecvBuf` is appended using `+=`, use the following instead of a setter:
     void appendRecvBuf(const std::string& data);

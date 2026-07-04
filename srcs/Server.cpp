@@ -4,8 +4,10 @@
 #include <netinet/in.h>
 #include <sys/poll.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 
+#include <cerrno>
 #include <csignal>
 #include <cstddef>
 #include <cstdio>
@@ -118,15 +120,34 @@ bool Server::pollLoop()
 
         for (size_t i = 0; i < _pollfds.size(); i++)
         {
+            // accept client
+            if (_pollfds[i].fd == _serverFd)
+            {
+                if (_pollfds[i].revents & POLLIN)
+                    acceptClient();
+                continue;
+            }
+            // disconnect client
+            if (_pollfds[i].revents & (POLLHUP | POLLERR))
+            {
+                disconnectClient(i, "Connection closed");
+                i--;
+                continue;
+            }
+            // receive
             if (_pollfds[i].revents & POLLIN)
             {
-                if (_pollfds[i].fd == _serverFd)
-                    acceptClient();
-                else
+                if (receiveData(i))
                 {
-                    if (receiveData(i))
-                        i--;
+                    i--;
+                    continue;
                 }
+            }
+            // send
+            if (_pollfds[i].revents & POLLOUT)
+            {
+                if (handleWrite(i))
+                    i--;
             }
         }
     }
@@ -142,6 +163,29 @@ void Server::addPollFd(int fd)
     _pollfds.push_back(pfd);
 }
 
+void Server::setPollEvent(int fd, short event)
+{
+    for (size_t i = 0; i < _pollfds.size(); ++i)
+    {
+        if (_pollfds[i].fd == fd)
+        {
+            _pollfds[i].events |= event;
+            return;
+        }
+    }
+}
+void Server::clearPollEvent(int fd, short event)
+{
+    for (size_t i = 0; i < _pollfds.size(); ++i)
+    {
+        if (_pollfds[i].fd == fd)
+        {
+            _pollfds[i].events &= ~event;
+            return;
+        }
+    }
+}
+
 /**
  * @brief
  *
@@ -151,15 +195,17 @@ void Server::addPollFd(int fd)
 bool Server::acceptClient()
 {
     int clientFd = accept(_serverFd, NULL, NULL);
-    if (clientFd >= 0)
-    {
-        std::cout << "New client connected: fd=" << clientFd << std::endl;
+    if (clientFd < 0)
+        return (perror("accept"), false);
+    int result = fcntl(clientFd, F_SETFL, O_NONBLOCK);
+    if (result < 0)
+        return (perror("fcntl"), close(clientFd), false);
 
-        addPollFd(clientFd);
-        _clients[clientFd] = Client(clientFd);
-        return true;
-    }
-    return (perror("accept"), false);
+    std::cout << "New client connected: fd=" << clientFd << std::endl;
+
+    addPollFd(clientFd);
+    _clients[clientFd] = Client(clientFd);
+    return true;
 }
 
 /**
@@ -285,7 +331,35 @@ bool Server::receiveData(size_t i)
     }
     return false;
 }
-
+/**
+ * @brief
+ *
+ * @param i
+ * @return true : disconnected
+ * @return false : connected
+ */
+bool Server::handleWrite(size_t i)
+{
+    int fd = _pollfds[i].fd;
+    std::map<int, Client>::iterator clientIt = _clients.find(fd);
+    if (clientIt == _clients.end())
+        return false;
+    Client& client = clientIt->second;
+    if (client.getSendBuf().empty())
+        return (clearPollEvent(fd, POLLOUT), false);
+    const std::string& buf = client.getSendBuf();
+    ssize_t n = send(fd, buf.data(), buf.size(), 0);
+    if (n > 0)
+        client.eraseSendBuf(n);
+    if (n < 0)
+    {
+        if (!(errno == EWOULDBLOCK || errno == EAGAIN))
+            return (disconnectClient(i, "Write error"), true);
+    }
+    if (!client.hasPendingSend())
+        clearPollEvent(fd, POLLOUT);
+    return false;
+}
 // public
 Server::Server() : _serverFd(-1), _port(0)
 {
@@ -354,7 +428,7 @@ const std::string& Server::getPassword() const
 
 void Server::sendToFd(int fd, const std::string& msg)
 {
-    send(fd, msg.c_str(), msg.size(), 0);
+    queueSend(fd, msg);
 }
 
 void Server::sendToChannel(const Channel& ch, const std::string& msg, int excludeFd)
@@ -367,4 +441,13 @@ void Server::sendToChannel(const Channel& ch, const std::string& msg, int exclud
             continue;
         sendToFd(*it, msg);
     }
+}
+
+void Server::queueSend(int fd, const std::string& msg)
+{
+    std::map<int, Client>::iterator it = _clients.find(fd);
+    if (it == _clients.end())
+        return;
+    it->second.appendSendBuf(msg);
+    setPollEvent(fd, POLLOUT);
 }

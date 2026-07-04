@@ -54,6 +54,10 @@ bool Client::isPassOk() const
 {
     return (_passOk);
 }
+const std::string& Client::getSendBuf() const
+{
+    return (_sendBuf);
+}
 const std::string& Client::getRecvBuf() const
 {
     return (_recvBuf);
@@ -70,6 +74,23 @@ void Client::setUser(const std::string& user)
 void Client::setPassOk(bool ok)
 {
     _passOk = ok;
+}
+
+void Client::appendSendBuf(const std::string& data)
+{
+    _sendBuf += data;
+}
+void Client::eraseSendBuf(size_t pos)
+{
+    _sendBuf.erase(0, pos + 1);
+}
+void Client::clearSendBuf()
+{
+    _sendBuf.clear();
+}
+bool Client::hasPendingSend() const
+{
+    return !_sendBuf.empty();
 }
 
 void Client::appendRecvBuf(const std::string& data)
