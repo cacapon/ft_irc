@@ -201,6 +201,21 @@ void Commands::handleNick(Server& srv, Client& client, std::vector<std::string>&
             return;
         }
     }
+    // When an already-registered client changes its nick, echo the change to
+    // itself and to everyone sharing a channel so their views stay consistent.
+    // Built with the old prefix before setNick; done only post-registration so
+    // the initial nick assignment during registration is not broadcast.
+    if (client.isWelcomed())
+    {
+        std::string notify = ":" + client.getPrefix() + " NICK :" + nick + "\r\n";
+        srv.sendToFd(client.getFd(), notify);
+        std::map<std::string, Channel>& channels = srv.getChannels();
+        for (std::map<std::string, Channel>::iterator it = channels.begin(); it != channels.end(); ++it)
+        {
+            if (it->second.isMember(client.getFd()))
+                srv.sendToChannel(it->second, notify, client.getFd());
+        }
+    }
     client.setNick(nick);
     tryRegister(srv, client);
 }
