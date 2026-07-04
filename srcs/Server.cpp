@@ -190,8 +190,10 @@ void Server::disconnectClient(size_t i, const std::string& reason)
             if (notifyChannels)
                 sendToChannel(ch, quitMsg, fd);
             ch.removeMember(fd);
-            ch.removeOperator(fd);
         }
+        // PART/KICK側がremoveOperatorを呼ばずmemberのみ外すバグにより_operatorsに
+        // fdが残留している場合があるため、isMember判定に関係なく無条件で除去する。
+        ch.removeOperator(fd);
         ch.removeInvited(fd);
 
         if (ch.getMembers().empty())
