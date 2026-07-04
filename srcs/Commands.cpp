@@ -136,6 +136,14 @@ Message Commands::parseLine(const std::string& line)
 
 void Commands::handlePing(Server& srv, Client& cli, std::vector<std::string>& params)
 {
+    // PING is rejected until the password has been accepted.
+    if (!cli.isPassOk())
+    {
+        std::string target = cli.getNick().empty() ? "*" : cli.getNick();
+        srv.sendToFd(cli.getFd(), Replies::ERR_NOTREGISTERED(target));
+        return;
+    }
+
     std::string token = params.empty() ? "" : params[0];
     std::string msg = ":" SERVER_NAME " PONG " SERVER_NAME " :" + token + "\r\n";
     srv.sendToFd(cli.getFd(), msg);
@@ -168,6 +176,13 @@ void Commands::handlePass(Server& srv, Client& client, std::vector<std::string>&
 void Commands::handleNick(Server& srv, Client& client, std::vector<std::string>& params)
 {
     std::string target = client.getNick().empty() ? "*" : client.getNick();
+
+    // NICK is rejected until the password has been accepted.
+    if (!client.isPassOk())
+    {
+        srv.sendToFd(client.getFd(), Replies::ERR_NOTREGISTERED(target));
+        return;
+    }
 
     if (params.empty())
     {
