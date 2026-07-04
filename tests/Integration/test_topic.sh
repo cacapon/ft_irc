@@ -9,19 +9,6 @@ SERVER_PID=$!
 sleep 0.3
 
 # 期待する行数分だけ読む（来なければ5秒で異常終了）
-read_lines() {
-    local fd=$1
-    local n=$2
-    local out=""
-    local line
-    local i=0
-    while [ "$i" -lt "$n" ]; do
-        read -t 5 -r line <&"$fd" || break
-        out+="$line"$'\n'
-        i=$((i + 1))
-    done
-    printf '%s' "$out"
-}
 
 # alice接続・登録
 exec 3<>/dev/tcp/127.0.0.1/$PORT
