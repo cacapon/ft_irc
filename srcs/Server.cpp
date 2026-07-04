@@ -151,15 +151,17 @@ void Server::addPollFd(int fd)
 bool Server::acceptClient()
 {
     int clientFd = accept(_serverFd, NULL, NULL);
-    if (clientFd >= 0)
-    {
-        std::cout << "New client connected: fd=" << clientFd << std::endl;
+    if (clientFd < 0)
+        return (perror("accept"), false);
+    int result = fcntl(clientFd, F_SETFL, O_NONBLOCK);
+    if (result < 0)
+        return (perror("fcntl"), close(clientFd), false);
 
-        addPollFd(clientFd);
-        _clients[clientFd] = Client(clientFd);
-        return true;
-    }
-    return (perror("accept"), false);
+    std::cout << "New client connected: fd=" << clientFd << std::endl;
+
+    addPollFd(clientFd);
+    _clients[clientFd] = Client(clientFd);
+    return true;
 }
 
 /**
