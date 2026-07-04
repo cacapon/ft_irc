@@ -171,7 +171,7 @@ bool Server::acceptClient()
  * @param i index into _pollfds of the client being disconnected
  * @param reason QUIT reason shown to other channel members
  */
-void Server::disconnectClient(size_t i, const std::string& reason)
+void Server::disconnectClient(size_t i, std::string reason)
 {
     int fd = _pollfds[i].fd;
     std::map<int, Client>::iterator clientIt = _clients.find(fd);

@@ -33,7 +33,7 @@ private:  // Methods
 
     // pollLoop Utils.
     bool acceptClient();
-    void disconnectClient(size_t i, const std::string& reason);
+    void disconnectClient(size_t i, std::string reason);
     bool receiveData(size_t);
 
 public:
