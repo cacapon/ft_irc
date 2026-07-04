@@ -315,6 +315,25 @@ void Commands::handleJoin(Server& srv, Client& client, std::vector<std::string>&
     {
         srv.sendToFd(client.getFd(), Replies::RPL_NOTOPIC(client.getNick(), chanName));
     }
+
+    // RFC 2812 requires 353/366 right after JOIN so the joining client can build its
+    // nicklist; reference clients (e.g. irssi) rely on this instead of the JOIN message alone.
+    const std::set<int>& members = ch.getMembers();
+    std::map<int, Client>& clients = srv.getClients();
+    std::string names;
+    for (std::set<int>::const_iterator it = members.begin(); it != members.end(); ++it)
+    {
+        std::map<int, Client>::iterator clientIt = clients.find(*it);
+        if (clientIt == clients.end())
+            continue;
+        if (!names.empty())
+            names += " ";
+        if (ch.isOperator(*it))
+            names += "@";
+        names += clientIt->second.getNick();
+    }
+    srv.sendToFd(client.getFd(), Replies::RPL_NAMREPLY(client.getNick(), chanName, names));
+    srv.sendToFd(client.getFd(), Replies::RPL_ENDOFNAMES(client.getNick(), chanName));
     return;
 }
 

@@ -30,14 +30,14 @@ check "存在しないチャンネルのPARTでERR_NOSUCHCHANNEL(403)" "1" "$(ec
 
 # bobが#testを作成、aliceは未参加でPART → ERR_NOTONCHANNEL(442)
 printf 'JOIN #test\r\n' >&4
-read_lines 4 2 > /dev/null
+read_lines 4 4 > /dev/null  # JOIN + NOTOPIC + NAMES(353) + ENDOFNAMES(366)
 printf 'PART #test\r\n' >&3
 resp=$(read_lines 3 1)
 check "参加していないチャンネルのPARTでERR_NOTONCHANNEL(442)" "1" "$(echo "$resp" | grep -c ' 442 ')"
 
 # aliceが#testに参加してPART → PART通知を受信
 printf 'JOIN #test\r\n' >&3
-read_lines 3 2 > /dev/null  # alice: JOIN + NOTOPIC
+read_lines 3 4 > /dev/null  # alice: JOIN + NOTOPIC + NAMES(353) + ENDOFNAMES(366)
 read_lines 4 1 > /dev/null  # bobにaliceのJOIN通知が届く、破棄
 
 printf 'PART #test\r\n' >&3
@@ -47,7 +47,7 @@ read_lines 4 1 > /dev/null  # bobにaliceのPART通知が届く、破棄
 
 # 理由付きPART → 理由付きPART通知を受信
 printf 'JOIN #test\r\n' >&3
-read_lines 3 2 > /dev/null
+read_lines 3 4 > /dev/null  # JOIN + NOTOPIC + NAMES(353) + ENDOFNAMES(366)
 read_lines 4 1 > /dev/null
 
 printf 'PART #test :goodbye\r\n' >&3
