@@ -132,6 +132,12 @@ bool Client::isAuthenticated() const
 
 std::string Client::getPrefix() const
 {
-    // Since irssi doesn't strictly check the hostname, I've set it to “localhost”
-    return _nick + "!" + _user + "@localhost";
+    return _nick + "!" + _user + "@" + getHost();
+}
+
+std::string Client::getHost() const
+{
+    // Since irssi doesn't strictly check the hostname, I've set it to “localhost”.
+    // prefixと001のホスト表記を食い違わせないよう、ここを唯一の定義元にする。
+    return "localhost";
 }

@@ -56,4 +56,5 @@ public:
 
     // For displaying the prefix in participation messages
     std::string getPrefix() const;
+    std::string getHost() const;
 };

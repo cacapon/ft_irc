@@ -51,12 +51,10 @@ void Commands::tryRegister(Server& srv, Client& client)
 
     std::string nick = client.getNick();
     std::string user = client.getUser();
-    // getPrefix()が組み立てるホスト表記と一致させる
-    std::string host = "localhost";
 
-    srv.sendToFd(client.getFd(), Replies::RPL_WELCOME(nick, user, host));
+    srv.sendToFd(client.getFd(), Replies::RPL_WELCOME(nick, user, client.getHost()));
     srv.sendToFd(client.getFd(), Replies::RPL_YOURHOST(nick));
-    srv.sendToFd(client.getFd(), Replies::RPL_CREATED(nick, "N/A"));
+    srv.sendToFd(client.getFd(), Replies::RPL_CREATED(nick, __DATE__));
     srv.sendToFd(client.getFd(), Replies::RPL_MYINFO(nick));
     client.setWelcomed(true);
 }
