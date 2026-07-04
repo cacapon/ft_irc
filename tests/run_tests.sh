@@ -43,6 +43,7 @@ run tests/Integration/test_topic.sh
 run tests/Integration/test_ping.sh
 run tests/Integration/test_max_length.sh
 run tests/Integration/test_bare_lf.sh
+run tests/Integration/test_overlong_crlf_boundary.sh
 
 # 総合結果
 echo "================================"
