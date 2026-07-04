@@ -25,7 +25,7 @@ exec 3<&- 3>&-
 # 登録後にPASS → ERR_ALREADYREGISTRED(462)
 exec 3<>/dev/tcp/127.0.0.1/$PORT
 printf 'PASS %s\r\nNICK alice\r\nUSER alice 0 * :Alice\r\n' "$PASSWORD" >&3
-read_lines 3 1 > /dev/null
+read_lines 3 4 > /dev/null
 printf 'PASS %s\r\n' "$PASSWORD" >&3
 resp=$(read_lines 3 1)
 check "登録後のPASSでERR_ALREADYREGISTRED(462)" "1" "$(echo "$resp" | grep -c ' 462 ')"
