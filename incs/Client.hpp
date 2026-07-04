@@ -17,7 +17,8 @@ private:
     // after the current dispatch finishes.
     bool _quitRequested;
     std::string _quitReason;
-    // 001-004送信済みかどうか。NICK再変更時などにtryRegisterが再実行されても多重送信しないためのフラグ
+    // Whether 001-004 have been sent; guards against re-sending when tryRegister
+    // runs again (e.g. on a later NICK change).
     bool _welcomed;
 
 public:

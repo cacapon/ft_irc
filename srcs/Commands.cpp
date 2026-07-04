@@ -42,8 +42,9 @@ bool Commands::isValidNick(const std::string& nick)
     return true;
 }
 
-// PASS/NICK/USERはどの順序でも来得るため、各ハンドラの末尾から呼び出して
-// 揃った時点で001-004を送る。二重送信はClientの_welcomedフラグで防ぐ。
+// PASS/NICK/USER may arrive in any order, so call this from the end of each
+// handler to send 001-004 once they are all set. The _welcomed flag prevents
+// double sending.
 void Commands::tryRegister(Server& srv, Client& client)
 {
     if (client.isWelcomed() || !client.isAuthenticated())

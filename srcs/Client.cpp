@@ -137,7 +137,7 @@ std::string Client::getPrefix() const
 
 std::string Client::getHost() const
 {
-    // Since irssi doesn't strictly check the hostname, I've set it to “localhost”.
-    // prefixと001のホスト表記を食い違わせないよう、ここを唯一の定義元にする。
+    // Since irssi doesn't strictly check the hostname, it's set to "localhost".
+    // Keep this the single source of the host so the prefix and the 001 host never diverge.
     return "localhost";
 }
