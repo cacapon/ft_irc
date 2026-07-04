@@ -70,6 +70,19 @@ resp=$(read_lines 3 1)
 check "分割送信でも\\n到達時に再構成される" "1" \
     "$(echo "$resp" | grep -c ':ircserv PONG ircserv :split')"
 
+# --- 超長行(bare \n 終端)後の再同期: over-lengthとbare-LFの交差 ---
+head -c 5000 /dev/zero | tr '\0' 'A' >&3
+printf '\nPING resynclf\n' >&3
+resp=$(drain 3)
+check "bare-LF終端の超長行後も再同期できる" "1" \
+    "$(echo "$resp" | grep -c ':ircserv PONG ircserv :resynclf')"
+
+# --- 空行(\n単独)を送ってもクラッシュせず無視される ---
+printf '\nPING emptyline\n' >&3
+resp=$(read_lines 3 1)
+check "空行を無視して次のコマンドに応答する" "1" \
+    "$(echo "$resp" | grep -c ':ircserv PONG ircserv :emptyline')"
+
 exec 3<&- 3>&-
 
 kill $SERVER_PID 2>/dev/null

@@ -246,8 +246,8 @@ bool Server::receiveData(size_t i)
                 line.erase(line.size() - 1);
             client.eraseRecvBuf(pos);
 
-            // The CRLF closing an over-long line: its head was already truncated
-            // and dispatched, so just drop this trailing remainder.
+            // The line terminator closing an over-long line: its head was already
+            // truncated and dispatched, so just drop this trailing remainder.
             if (client.isOverLength())
             {
                 client.setOverLength(false);
@@ -269,10 +269,10 @@ bool Server::receiveData(size_t i)
         }
 
         // The loop above consumed every complete line, so the buffer now holds
-        // no CRLF. If what remains still exceeds the limit, it is the head of an
-        // over-long line (never a valid command): dispatch its truncated head
-        // once, then discard the rest until CRLF arrives. This also bounds the
-        // buffer against a client that never sends CRLF.
+        // no line terminator. If what remains still exceeds the limit, it is the
+        // head of an over-long line (never a valid command): dispatch its truncated
+        // head once, then discard the rest until the terminating LF arrives. This
+        // also bounds the buffer against a client that never sends a newline.
         if (client.getRecvBuf().size() > MAX_MSG_LEN)
         {
             if (!client.isOverLength())
