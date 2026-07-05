@@ -11,7 +11,7 @@
 # **************************************************************************** #
 
 NAME	= ircserv
-CPP 	= c++
+CPP 	= clang++
 CPP_FLG = -std=c++98 -Wall -Wextra -Werror -pedantic-errors
 
 SRCS_DIR = srcs
