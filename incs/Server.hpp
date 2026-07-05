@@ -23,7 +23,6 @@ private:  // Properties
 private:  // Methods
     bool makeSocket();
     bool addressRecycle();
-    bool makeNonBlocking();
     bool bindSocket();
     bool startListen();
     bool pollLoop();
