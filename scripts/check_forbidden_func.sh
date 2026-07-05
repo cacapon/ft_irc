@@ -11,7 +11,7 @@ ALLOWED_SYSCALLS=(
   "sigaddset" "sigdelset" "sigismember"
 
   # C++98標準ライブラリ
-  "atoi" "strlen"
+  "atoi" "strlen" "isdigit"
   "isalnum" "isalpha" "toupper"
   "memcmp" "memmove" "memset"
 
