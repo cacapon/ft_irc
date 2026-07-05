@@ -23,6 +23,13 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+echo "Running forbidden function check..."
+bash scripts/check_forbidden_func.sh
+if [ $? -ne 0 ]; then
+    echo "FAIL: 禁止関数チェック失敗"
+    exit 1
+fi
+
 echo ""
 echo "All checks passed!"
 exit 0

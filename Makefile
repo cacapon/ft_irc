@@ -6,7 +6,7 @@
 #    By: ttsubo <ttsubo@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/07/13 12:46:57 by ttsubo            #+#    #+#              #
-#    Updated: 2026/07/04 15:13:06 by ttsubo           ###   ########.fr        #
+#    Updated: 2026/07/05 10:47:27 by ttsubo           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -22,8 +22,8 @@ CMD_SRC = commands/Core.cpp commands/Ping.cpp commands/Pass.cpp commands/Nick.cp
           commands/User.cpp commands/Join.cpp commands/Privmsg.cpp commands/Part.cpp \
           commands/Mode.cpp commands/Kick.cpp commands/Invite.cpp commands/Topic.cpp \
           commands/Quit.cpp
-SRC 	= main.cpp Server.cpp Client.cpp Channel.cpp $(CMD_SRC)
-SRCS	= $(addprefix $(SRCS_DIR)/, $(SRC))
+SRC 	= Server.cpp Client.cpp Channel.cpp Utils.cpp $(CMD_SRC)
+SRCS	= $(addprefix $(SRCS_DIR)/, $(SRC)) $(addprefix $(SRCS_DIR)/, main.cpp) 
 OBJS 	= $(SRCS:$(SRCS_DIR)/%.cpp=$(OBJS_DIR)/%.o)
 
 all:$(NAME)
@@ -43,8 +43,9 @@ test: all
 
 UNIT_TEST_DIR	= tests/unit
 UNIT_TEST_BIN	= unit_tests
-UNIT_TEST_SRCS	= $(UNIT_TEST_DIR)/test_main.cpp $(UNIT_TEST_DIR)/test_parse.cpp $(UNIT_TEST_DIR)/test_replies.cpp $(UNIT_TEST_DIR)/test_client.cpp
-UNIT_SRCS		= $(addprefix $(SRCS_DIR)/, $(CMD_SRC)) $(SRCS_DIR)/Client.cpp $(SRCS_DIR)/Channel.cpp $(SRCS_DIR)/Server.cpp
+UNIT_TEST_SRC	= test_main.cpp test_parse.cpp test_replies.cpp test_client.cpp
+UNIT_TEST_SRCS	= $(addprefix $(UNIT_TEST_DIR)/, $(UNIT_TEST_SRC))
+UNIT_SRCS		= $(addprefix $(SRCS_DIR)/, $(SRC))
 
 unit_test:
 	$(CPP) $(CPP_FLG) -I $(INCS_DIR) -I $(UNIT_TEST_DIR) $(UNIT_TEST_SRCS) $(UNIT_SRCS) -o $(UNIT_TEST_BIN)

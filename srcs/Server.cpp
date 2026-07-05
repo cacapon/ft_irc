@@ -1,6 +1,5 @@
 #include "Server.hpp"
 
-#include <fcntl.h>
 #include <netinet/in.h>
 #include <sys/poll.h>
 #include <sys/socket.h>
@@ -18,6 +17,7 @@
 #include "Channel.hpp"
 #include "Client.hpp"
 #include "Commands.hpp"
+#include "Utils.hpp"
 
 // private
 
@@ -30,9 +30,9 @@
  */
 bool Server::makeSocket()
 {
-    _serverFd = socket(AF_INET, SOCK_STREAM, 0);
+    _serverFd = ft_socket(AF_INET, SOCK_STREAM, 0);
     if (_serverFd < 0)
-        return (perror("socket"), false);
+        throw std::runtime_error("socket failed");
     return true;
 }
 
@@ -49,20 +49,7 @@ bool Server::addressRecycle()
 {
     int opt = 1;
     if (setsockopt(_serverFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-        return (perror("setsockopt"), false);
-    return true;
-}
-/**
- * @brief set Non-Blocking fd.
- *
- * @return bool
- * @note F_SETFL: Set File status FLags.
- * @note O_NONBLOCK: Flag to enable non-blocking mode.
- */
-bool Server::makeNonBlocking()
-{
-    if (fcntl(_serverFd, F_SETFL, O_NONBLOCK) < 0)
-        return (perror("fcntl"), false);
+        throw std::runtime_error("setsockopt failed");
     return true;
 }
 
@@ -84,7 +71,7 @@ bool Server::bindSocket()
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port = htons(_port);
     if (bind(_serverFd, (struct sockaddr*)&addr, sizeof(addr)) < 0)
-        return (perror("bind"), false);
+        throw std::runtime_error("bind failed");
     return true;
 }
 /**
@@ -95,7 +82,7 @@ bool Server::bindSocket()
 bool Server::startListen()
 {
     if (listen(_serverFd, SOMAXCONN) < 0)
-        return (perror("listen"), false);
+        throw std::runtime_error("listen failed");
     std::cout << "Server listening on port " << _port << std::endl;
     return true;
 }
@@ -113,10 +100,7 @@ bool Server::pollLoop()
     {
         int ret = poll(&_pollfds[0], _pollfds.size(), -1);
         if (ret < 0)
-        {
-            perror("poll");
-            return false;
-        }
+            throw std::runtime_error("poll failed");
 
         for (size_t i = 0; i < _pollfds.size(); i++)
         {
@@ -196,10 +180,7 @@ bool Server::acceptClient()
 {
     int clientFd = accept(_serverFd, NULL, NULL);
     if (clientFd < 0)
-        return (perror("accept"), false);
-    int result = fcntl(clientFd, F_SETFL, O_NONBLOCK);
-    if (result < 0)
-        return (perror("fcntl"), close(clientFd), false);
+        throw std::runtime_error("accept failed");
 
     std::cout << "New client connected: fd=" << clientFd << std::endl;
 
@@ -396,16 +377,10 @@ void Server::run()
     // Sending a message to a disconnected socket causes the OS to kill the process,
     // so SIGPIPE must be ignored to keep the server running.
     signal(SIGPIPE, SIG_IGN);
-    if (!makeSocket())
-        return;
-    if (!addressRecycle())
-        return;
-    if (!makeNonBlocking())
-        return;
-    if (!bindSocket())
-        return;
-    if (!startListen())
-        return;
+    makeSocket();
+    addressRecycle();
+    bindSocket();
+    startListen();
     pollLoop();
 }
 
