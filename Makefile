@@ -12,7 +12,7 @@
 
 NAME	= ircserv
 CPP 	= c++
-CPP_FLG = -std=c++98 -Wall -Wextra -Werror
+CPP_FLG = -std=c++98 -Wall -Wextra -Werror -pedantic-errors
 
 SRCS_DIR = srcs
 INCS_DIR = incs
