@@ -18,8 +18,12 @@ SRCS_DIR = srcs
 INCS_DIR = incs
 OBJS_DIR = objs
 
-SRC 	= main.cpp Server.cpp Client.cpp Commands.cpp Channel.cpp
-SRCS	= $(addprefix $(SRCS_DIR)/, $(SRC)) 
+CMD_SRC = commands/Core.cpp commands/Ping.cpp commands/Pass.cpp commands/Nick.cpp \
+          commands/User.cpp commands/Join.cpp commands/Privmsg.cpp commands/Part.cpp \
+          commands/Mode.cpp commands/Kick.cpp commands/Invite.cpp commands/Topic.cpp \
+          commands/Quit.cpp
+SRC 	= main.cpp Server.cpp Client.cpp Channel.cpp $(CMD_SRC)
+SRCS	= $(addprefix $(SRCS_DIR)/, $(SRC))
 OBJS 	= $(SRCS:$(SRCS_DIR)/%.cpp=$(OBJS_DIR)/%.o)
 
 all:$(NAME)
@@ -31,6 +35,7 @@ $(NAME):$(OBJS)
 	$(CPP) $(CPP_FLG) $(OBJS) -o $@
 
 $(OBJS_DIR)/%.o:$(SRCS_DIR)/%.cpp | $(OBJS_DIR)
+	@mkdir -p $(dir $@)
 	$(CPP) $(CPP_FLG) -I $(INCS_DIR) -c $< -o $@
 
 test: all
@@ -39,7 +44,7 @@ test: all
 UNIT_TEST_DIR	= tests/unit
 UNIT_TEST_BIN	= unit_tests
 UNIT_TEST_SRCS	= $(UNIT_TEST_DIR)/test_main.cpp $(UNIT_TEST_DIR)/test_parse.cpp $(UNIT_TEST_DIR)/test_replies.cpp $(UNIT_TEST_DIR)/test_client.cpp
-UNIT_SRCS		= $(SRCS_DIR)/Commands.cpp $(SRCS_DIR)/Client.cpp $(SRCS_DIR)/Channel.cpp $(SRCS_DIR)/Server.cpp
+UNIT_SRCS		= $(addprefix $(SRCS_DIR)/, $(CMD_SRC)) $(SRCS_DIR)/Client.cpp $(SRCS_DIR)/Channel.cpp $(SRCS_DIR)/Server.cpp
 
 unit_test:
 	$(CPP) $(CPP_FLG) -I $(INCS_DIR) -I $(UNIT_TEST_DIR) $(UNIT_TEST_SRCS) $(UNIT_SRCS) -o $(UNIT_TEST_BIN)
