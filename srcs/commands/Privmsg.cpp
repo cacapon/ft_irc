@@ -11,7 +11,7 @@
 void Commands::handlePrivmsg(Server& srv, Client& client, std::vector<std::string>& params)
 {
     // validate
-    if (!client.isAuthenticated())
+    if (!requireRegistered(srv, client))
         return;
     if (params.empty())
     {
@@ -30,37 +30,33 @@ void Commands::handlePrivmsg(Server& srv, Client& client, std::vector<std::strin
     if (target_is_channel)
     {
         // send to channel
-        std::map<std::string, Channel>& channels = srv.getChannels();
-        std::map<std::string, Channel>::iterator it = channels.find(target);
-
-        if (it == channels.end())
+        // Note: an unknown channel replies ERR_NOSUCHNICK (not ERR_NOSUCHCHANNEL)
+        // here, so findChannelOrReply is not used to keep that reply code intact.
+        Channel* ch = srv.findChannel(target);
+        if (!ch)
         {
             srv.sendToFd(client.getFd(), Replies::ERR_NOSUCHNICK(client.getNick(), target));
             return;
         }
 
-        Channel& ch = it->second;
-        if (!ch.isMember(client.getFd()))
+        if (!ch->isMember(client.getFd()))
         {
             srv.sendToFd(client.getFd(), Replies::ERR_CANNOTSENDTOCHAN(client.getNick(), target));
             return;
         }
         std::string msg = ":" + client.getPrefix() + " PRIVMSG " + target + " :" + params[1] + "\r\n";
-        srv.sendToChannel(ch, msg, client.getFd());
+        srv.sendToChannel(*ch, msg, client.getFd());
         return;
     }
     else
     {
         // send to nick
-        std::map<int, Client>& clients = srv.getClients();
-        for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
+        Client* targetClient = srv.findClientByNick(target);
+        if (targetClient)
         {
-            if (it->second.getNick() == target)
-            {
-                std::string msg = ":" + client.getPrefix() + " PRIVMSG " + target + " :" + params[1] + "\r\n";
-                srv.sendToFd(it->second.getFd(), msg);
-                return;
-            }
+            std::string msg = ":" + client.getPrefix() + " PRIVMSG " + target + " :" + params[1] + "\r\n";
+            srv.sendToFd(targetClient->getFd(), msg);
+            return;
         }
     }
     srv.sendToFd(client.getFd(), Replies::ERR_NOSUCHNICK(client.getNick(), target));

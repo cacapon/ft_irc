@@ -52,6 +52,11 @@ public:
     std::map<std::string, Channel>& getChannels();
     const std::string& getPassword() const;
 
+    // Returns NULL when no client has the given nickname.
+    Client* findClientByNick(const std::string& nick);
+    // Returns NULL when the channel does not exist.
+    Channel* findChannel(const std::string& name);
+
     void sendToFd(int fd, const std::string& msg);
     void sendToChannel(const Channel& ch, const std::string& msg, int excludeFd = -1);
     void queueSend(int, const std::string&);

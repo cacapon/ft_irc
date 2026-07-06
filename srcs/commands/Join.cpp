@@ -12,17 +12,11 @@
 void Commands::handleJoin(Server& srv, Client& client, std::vector<std::string>& params)
 {
     // If it's not verified, ignore it
-    if (!client.isAuthenticated())
-    {
-        srv.sendToFd(client.getFd(), Replies::ERR_NOTREGISTERED(client.getNick()));
+    if (!requireRegistered(srv, client))
         return;
-    }
     // If `chanName` is missing, send 461 (ERR_NEEDMOREPARAMS) to the client and return.
-    if (params.empty())
-    {
-        srv.sendToFd(client.getFd(), Replies::ERR_NEEDMOREPARAMS(client.getNick(), "JOIN"));
+    if (!requireParams(srv, client, params, 1, "JOIN"))
         return;
-    }
 
     // Read one channel name
     std::string chanName = params[0];

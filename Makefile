@@ -21,7 +21,7 @@ OBJS_DIR = objs
 CMD_SRC = commands/Core.cpp commands/Ping.cpp commands/Pass.cpp commands/Nick.cpp \
           commands/User.cpp commands/Join.cpp commands/Privmsg.cpp commands/Part.cpp \
           commands/Mode.cpp commands/Kick.cpp commands/Invite.cpp commands/Topic.cpp \
-          commands/Quit.cpp
+          commands/Quit.cpp commands/Guards.cpp
 SRC 	= Server.cpp Client.cpp Channel.cpp Utils.cpp $(CMD_SRC)
 SRCS	= $(addprefix $(SRCS_DIR)/, $(SRC)) $(addprefix $(SRCS_DIR)/, main.cpp) 
 OBJS 	= $(SRCS:$(SRCS_DIR)/%.cpp=$(OBJS_DIR)/%.o)
