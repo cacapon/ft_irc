@@ -9,7 +9,7 @@ static void usage()
     std::cout << "Usage: ./ircserv <port> <password>" << std::endl;
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     if (argc != 3)
         return (usage(), 1);
@@ -17,6 +17,14 @@ int main(int argc, char **argv)
     int port = atoi(argv[1]);
     std::string password = argv[2];
     Server server(port, password);
-    server.run();
+    try
+    {
+        server.run();
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+
     return 0;
 }
