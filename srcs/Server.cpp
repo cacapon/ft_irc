@@ -401,6 +401,24 @@ const std::string& Server::getPassword() const
     return _password;
 }
 
+Client* Server::findClientByNick(const std::string& nick)
+{
+    for (std::map<int, Client>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+    {
+        if (it->second.getNick() == nick)
+            return &it->second;
+    }
+    return NULL;
+}
+
+Channel* Server::findChannel(const std::string& name)
+{
+    std::map<std::string, Channel>::iterator it = _channels.find(name);
+    if (it == _channels.end())
+        return NULL;
+    return &it->second;
+}
+
 void Server::sendToFd(int fd, const std::string& msg)
 {
     queueSend(fd, msg);

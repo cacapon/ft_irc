@@ -10,7 +10,7 @@
 void Commands::handlePass(Server& srv, Client& client, std::vector<std::string>& params)
 {
     // Variable for the name of the error reply recipient
-    std::string target = client.getNick().empty() ? "*" : client.getNick();
+    std::string target = replyTarget(client);
 
     // An error occurs if the user has already completed registration
     if (client.isAuthenticated())

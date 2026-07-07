@@ -32,7 +32,7 @@ bool Commands::isValidNick(const std::string& nick)
 
 void Commands::handleNick(Server& srv, Client& client, std::vector<std::string>& params)
 {
-    std::string target = client.getNick().empty() ? "*" : client.getNick();
+    std::string target = replyTarget(client);
 
     // NICK is rejected until the password has been accepted.
     if (!client.isPassOk())
@@ -54,15 +54,13 @@ void Commands::handleNick(Server& srv, Client& client, std::vector<std::string>&
         return;
     }
 
-    // Duplicate Check
-    std::map<int, Client>& clients = srv.getClients();
-    for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
+    // Duplicate check. Relies on the invariant that non-empty nicks are
+    // unique (enforced here), so the first match is the only possible one.
+    Client* existing = srv.findClientByNick(nick);
+    if (existing && existing->getFd() != client.getFd())
     {
-        if (it->first != client.getFd() && it->second.getNick() == nick)
-        {
-            srv.sendToFd(client.getFd(), Replies::ERR_NICKNAMEINUSE(target, nick));
-            return;
-        }
+        srv.sendToFd(client.getFd(), Replies::ERR_NICKNAMEINUSE(target, nick));
+        return;
     }
 
     // A no-op nick change (same nick) needs no state update or broadcast.

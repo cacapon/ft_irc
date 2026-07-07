@@ -19,50 +19,34 @@
 void Commands::handleTopic(Server& srv, Client& cli, std::vector<std::string>& params)
 {
     // validate
-    if (!cli.isAuthenticated())
-    {
-        srv.sendToFd(cli.getFd(), Replies::ERR_NOTREGISTERED(cli.getNick()));
+    if (!requireRegistered(srv, cli))
         return;
-    }
-    if (params.size() < 1)
-    {
-        srv.sendToFd(cli.getFd(), Replies::ERR_NEEDMOREPARAMS(cli.getNick(), "TOPIC"));
+    if (!requireParams(srv, cli, params, 1, "TOPIC"))
         return;
-    }
     std::string chanName = params[0];
-    std::map<std::string, Channel>& channels = srv.getChannels();
-    if (channels.find(chanName) == channels.end())
-    {
-        srv.sendToFd(cli.getFd(), Replies::ERR_NOSUCHCHANNEL(cli.getNick(), chanName));
+    Channel* ch = findChannelOrReply(srv, cli, chanName);
+    if (!ch)
         return;
-    }
-    Channel& ch = channels[chanName];
-    if (!(ch.isMember(cli.getFd())))
-    {
-        srv.sendToFd(cli.getFd(), Replies::ERR_NOTONCHANNEL(cli.getNick(), chanName));
+    if (!requireMembership(srv, cli, *ch, chanName))
         return;
-    }
 
     // execute
     if (params.size() == 1)
     {
-        std::string topic = ch.getTopic();
+        std::string topic = ch->getTopic();
         if (topic.empty())
-            srv.sendToFd(cli.getFd(), Replies::RPL_NOTOPIC(cli.getNick(), ch.getName()));
+            srv.sendToFd(cli.getFd(), Replies::RPL_NOTOPIC(cli.getNick(), ch->getName()));
         else
-            srv.sendToFd(cli.getFd(), Replies::RPL_TOPIC(cli.getNick(), ch.getName(), topic));
+            srv.sendToFd(cli.getFd(), Replies::RPL_TOPIC(cli.getNick(), ch->getName(), topic));
         return;
     }
     else
     {
-        if (ch.isTopicRestricted() && !ch.isOperator(cli.getFd()))
-        {
-            srv.sendToFd(cli.getFd(), Replies::ERR_CHANOPRIVSNEEDED(cli.getNick(), ch.getName()));
+        if (ch->isTopicRestricted() && !requireChanOp(srv, cli, *ch, ch->getName()))
             return;
-        }
         std::string new_topic = params[1];
-        ch.setTopic(new_topic);
+        ch->setTopic(new_topic);
         std::string msg = ":" + cli.getPrefix() + " TOPIC " + chanName + " :" + new_topic + "\r\n";
-        srv.sendToChannel(ch, msg);
+        srv.sendToChannel(*ch, msg);
     }
 }

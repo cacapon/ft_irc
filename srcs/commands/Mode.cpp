@@ -25,24 +25,15 @@ void Commands::recordAppliedMode(std::string& appliedModes, char& lastSign, char
 void Commands::handleMode(Server& srv, Client& cli, std::vector<std::string>& params)
 {
     // varidate
-    if (!cli.isAuthenticated())
-    {
-        srv.sendToFd(cli.getFd(), Replies::ERR_NOTREGISTERED(cli.getNick()));
+    if (!requireRegistered(srv, cli))
         return;
-    }
-    if (params.empty())
-    {
-        srv.sendToFd(cli.getFd(), Replies::ERR_NEEDMOREPARAMS(cli.getNick(), "MODE"));
+    if (!requireParams(srv, cli, params, 1, "MODE"))
         return;
-    }
     std::string chanName = params[0];
-    std::map<std::string, Channel>& channels = srv.getChannels();
-    if (channels.find(chanName) == channels.end())
-    {
-        srv.sendToFd(cli.getFd(), Replies::ERR_NOSUCHCHANNEL(cli.getNick(), chanName));
+    Channel* chPtr = findChannelOrReply(srv, cli, chanName);
+    if (!chPtr)
         return;
-    }
-    Channel& ch = channels[chanName];
+    Channel& ch = *chPtr;
     if (params.size() == 1)
     {
         srv.sendToFd(cli.getFd(),
@@ -50,11 +41,8 @@ void Commands::handleMode(Server& srv, Client& cli, std::vector<std::string>& pa
         return;
     }
 
-    if (!ch.isOperator(cli.getFd()))
-    {
-        srv.sendToFd(cli.getFd(), Replies::ERR_CHANOPRIVSNEEDED(cli.getNick(), ch.getName()));
+    if (!requireChanOp(srv, cli, ch, ch.getName()))
         return;
-    }
 
     std::string modeString = params[1];
     size_t argldx = 2;
@@ -93,11 +81,8 @@ void Commands::handleMode(Server& srv, Client& cli, std::vector<std::string>& pa
                     recordAppliedMode(appliedModes, lastSign, c, adding);
                     break;
                 }
-                if (params.size() - 1 < argldx)
-                {
-                    srv.sendToFd(cli.getFd(), Replies::ERR_NEEDMOREPARAMS(cli.getNick(), "MODE"));
+                if (!requireParams(srv, cli, params, argldx + 1, "MODE"))
                     break;
-                }
                 ch.setKey(params[argldx++]);
                 recordAppliedMode(appliedModes, lastSign, c, adding);
                 appliedArgs += " " + params[argldx - 1];
@@ -110,11 +95,8 @@ void Commands::handleMode(Server& srv, Client& cli, std::vector<std::string>& pa
                     recordAppliedMode(appliedModes, lastSign, c, adding);
                     break;
                 }
-                if (params.size() - 1 < argldx)
-                {
-                    srv.sendToFd(cli.getFd(), Replies::ERR_NEEDMOREPARAMS(cli.getNick(), "MODE"));
+                if (!requireParams(srv, cli, params, argldx + 1, "MODE"))
                     break;
-                }
                 const std::string& limitStr = params[argldx++];
                 bool valid = !limitStr.empty();
                 for (size_t j = 0; j < limitStr.size() && valid; ++j)
@@ -135,22 +117,10 @@ void Commands::handleMode(Server& srv, Client& cli, std::vector<std::string>& pa
             }
             case 'o':
             {
-                if (params.size() - 1 < argldx)
-                {
-                    srv.sendToFd(cli.getFd(), Replies::ERR_NEEDMOREPARAMS(cli.getNick(), "MODE"));
+                if (!requireParams(srv, cli, params, argldx + 1, "MODE"))
                     break;
-                }
                 std::string target_nick = params[argldx++];
-                std::map<int, Client>& clients = srv.getClients();
-                Client* target_cli = NULL;
-                for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
-                {
-                    if (it->second.getNick() == target_nick)
-                    {
-                        target_cli = &it->second;
-                        break;
-                    }
-                }
+                Client* target_cli = srv.findClientByNick(target_nick);
                 if (!target_cli)
                 {
                     srv.sendToFd(cli.getFd(), Replies::ERR_NOSUCHNICK(cli.getNick(), target_nick));
