@@ -6,7 +6,7 @@
 # - 1コマンドを複数writeに分割しても再構成されること
 source tests/Integration/test_helper.sh
 
-PORT=6670
+PORT=6669
 PASSWORD=pass
 
 ./ircserv $PORT $PASSWORD > /tmp/ircserv_barelf_out.txt 2>&1 &

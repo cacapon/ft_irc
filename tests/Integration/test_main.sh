@@ -1,9 +1,9 @@
 #!/bin/bash
 source tests/Integration/test_helper.sh
 
-check "引数なしでUsage表示" "Usage: ./ircserv <port> <password>" "$(./ircserv 2>&1)"
-check "引数1つでUsage表示" "Usage: ./ircserv <port> <password>" "$(./ircserv 6667 2>&1)"
-check "引数3つでUsage表示" "Usage: ./ircserv <port> <password>" "$(./ircserv 6667 pass extra 2>&1)"
+check "引数なしでUsage表示" "Usage: ./ircserv <port 6665-6669> <password>" "$(./ircserv 2>&1)"
+check "引数1つでUsage表示" "Usage: ./ircserv <port 6665-6669> <password>" "$(./ircserv 6667 2>&1)"
+check "引数3つでUsage表示" "Usage: ./ircserv <port 6665-6669> <password>" "$(./ircserv 6667 pass extra 2>&1)"
 
 # サーバー起動確認
 ./ircserv 6667 pass > /tmp/ircserv_out.txt &
