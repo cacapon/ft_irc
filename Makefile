@@ -6,7 +6,7 @@
 #    By: ttsubo <ttsubo@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/07/13 12:46:57 by ttsubo            #+#    #+#              #
-#    Updated: 2026/07/05 10:47:27 by ttsubo           ###   ########.fr        #
+#    Updated: 2026/07/08 14:11:54 by ttsubo           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -22,7 +22,7 @@ CMD_SRC = commands/Core.cpp commands/Ping.cpp commands/Pass.cpp commands/Nick.cp
           commands/User.cpp commands/Join.cpp commands/Privmsg.cpp commands/Part.cpp \
           commands/Mode.cpp commands/Kick.cpp commands/Invite.cpp commands/Topic.cpp \
           commands/Quit.cpp commands/Guards.cpp
-SRC 	= Server.cpp Client.cpp Channel.cpp Utils.cpp $(CMD_SRC)
+SRC 	= Server.cpp Client.cpp Channel.cpp Utils.cpp Replies.cpp $(CMD_SRC)
 SRCS	= $(addprefix $(SRCS_DIR)/, $(SRC)) $(addprefix $(SRCS_DIR)/, main.cpp) 
 OBJS 	= $(SRCS:$(SRCS_DIR)/%.cpp=$(OBJS_DIR)/%.o)
 
