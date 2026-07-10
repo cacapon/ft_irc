@@ -1,4 +1,5 @@
 #include <cctype>
+#include <climits>
 #include <cstddef>
 #include <cstdlib>
 #include <string>
