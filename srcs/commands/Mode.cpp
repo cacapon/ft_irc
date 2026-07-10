@@ -1,5 +1,3 @@
-#include "Commands.hpp"
-
 #include <cctype>
 #include <cstddef>
 #include <cstdlib>
@@ -8,6 +6,7 @@
 
 #include "Channel.hpp"
 #include "Client.hpp"
+#include "Commands.hpp"
 #include "Replies.hpp"
 #include "Server.hpp"
 
@@ -109,8 +108,13 @@ void Commands::handleMode(Server& srv, Client& cli, std::vector<std::string>& pa
                     srv.sendToFd(cli.getFd(), Replies::ERR_UNKNOWNMODE(cli.getNick(), c, ch.getName()));
                     break;
                 }
-                int limit = atoi(limitStr.c_str());
-                ch.setLimit(limit);
+                long limit = strtol(limitStr.c_str(), NULL, 10);
+                if (limit <= 0 || limit > INT_MAX)
+                {
+                    srv.sendToFd(cli.getFd(), Replies::ERR_UNKNOWNMODE(cli.getNick(), c, ch.getName()));
+                    break;
+                }
+                ch.setLimit(static_cast<int>(limit));
                 recordAppliedMode(appliedModes, lastSign, c, adding);
                 appliedArgs += " " + limitStr;
                 break;
