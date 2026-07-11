@@ -19,6 +19,15 @@
 #include "Commands.hpp"
 #include "Utils.hpp"
 
+// Set by the SIGINT/SIGTERM handler; sig_atomic_t keeps the read/write
+// async-signal-safe without needing a lock.
+static volatile sig_atomic_t g_shutdownRequested = 0;
+
+static void requestShutdown(int)
+{
+    g_shutdownRequested = 1;
+}
+
 // private
 
 /**
@@ -96,11 +105,17 @@ bool Server::pollLoop()
 {
     addPollFd(_serverFd);
 
-    while (true)
+    while (!g_shutdownRequested)
     {
         int ret = poll(&_pollfds[0], _pollfds.size(), -1);
         if (ret < 0)
+        {
+            // A signal delivered while blocked in poll() interrupts it with
+            // EINTR; loop back around so the shutdown flag gets checked.
+            if (errno == EINTR)
+                continue;
             throw std::runtime_error("poll failed");
+        }
 
         for (size_t i = 0; i < _pollfds.size(); i++)
         {
@@ -135,6 +150,7 @@ bool Server::pollLoop()
             }
         }
     }
+    std::cout << "Server shutting down" << std::endl;
     return true;
 }
 
@@ -180,7 +196,13 @@ bool Server::acceptClient()
 {
     int clientFd = accept(_serverFd, NULL, NULL);
     if (clientFd < 0)
+    {
+        // A shutdown signal can interrupt accept(); let pollLoop's condition
+        // decide instead of treating the interruption as a fatal error.
+        if (errno == EINTR)
+            return false;
         throw std::runtime_error("accept failed");
+    }
 
     std::cout << "New client connected: fd=" << clientFd << std::endl;
 
@@ -246,6 +268,10 @@ bool Server::receiveData(size_t i)
 {
     char buf[512];
     int bytes = recv(_pollfds[i].fd, buf, sizeof(buf) - 1, 0);
+    // A shutdown signal can interrupt recv(); retry on the next poll round
+    // instead of disconnecting a healthy client.
+    if (bytes < 0 && errno == EINTR)
+        return false;
     if (bytes <= 0)
     {
         disconnectClient(i, "Connection closed");
@@ -334,7 +360,9 @@ bool Server::handleWrite(size_t i)
         client.eraseSendBuf(n);
     if (n < 0)
     {
-        if (!(errno == EWOULDBLOCK || errno == EAGAIN))
+        // EINTR: a shutdown signal interrupted send(); the data stays in the
+        // send buffer and POLLOUT will retry, so it is as benign as EAGAIN.
+        if (!(errno == EWOULDBLOCK || errno == EAGAIN || errno == EINTR))
             return (disconnectClient(i, "Write error"), true);
     }
     if (!client.hasPendingSend())
@@ -365,9 +393,22 @@ Server::~Server()
 
 void Server::run()
 {
+    struct sigaction sa;
+    std::memset(&sa, 0, sizeof(sa));
+    sigemptyset(&sa.sa_mask);
+    // No SA_RESTART: poll() must return with EINTR on SIGINT/SIGTERM so
+    // pollLoop() can observe g_shutdownRequested instead of blocking forever.
+    sa.sa_flags = 0;
+
     // Sending a message to a disconnected socket causes the OS to kill the process,
     // so SIGPIPE must be ignored to keep the server running.
-    signal(SIGPIPE, SIG_IGN);
+    sa.sa_handler = SIG_IGN;
+    sigaction(SIGPIPE, &sa, NULL);
+
+    sa.sa_handler = requestShutdown;
+    sigaction(SIGINT, &sa, NULL);
+    sigaction(SIGTERM, &sa, NULL);
+
     makeSocket();
     addressRecycle();
     bindSocket();
