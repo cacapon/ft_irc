@@ -13,7 +13,7 @@ ALLOWED_SYSCALLS=(
   # C++98標準ライブラリ
   "atoi" "strlen" "isdigit" "strtol"
   "isalnum" "isalpha" "toupper"
-  "memcmp" "memmove" "memset"
+  "memcmp" "memcpy" "memmove" "memset"
 
   # C++ランタイム
   "Unwind_Resume"
