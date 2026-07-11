@@ -38,11 +38,15 @@ private:  // Methods
     bool receiveData(size_t);
     bool handleWrite(size_t);
 
+    // The destructor owns and closes the fds, so copying would make two
+    // instances close the same fd. Declared private without a definition
+    // to forbid copies (C++98 idiom).
+    Server(const Server&);
+    Server& operator=(const Server&);
+
 public:
     Server();
     Server(int, const std::string&);
-    Server(const Server&);
-    Server& operator=(const Server&);
     ~Server();
     void run();
 

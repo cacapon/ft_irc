@@ -348,28 +348,19 @@ Server::Server() : _serverFd(-1), _port(0)
 Server::Server(int port, const std::string& password) : _serverFd(-1), _port(port), _password(password)
 {
 }
-Server::Server(const Server& src)
-    : _serverFd(src._serverFd),
-      _port(src._port),
-      _password(src._password),
-      _pollfds(src._pollfds),
-      _clients(src._clients)
-{
-}
-Server& Server::operator=(const Server& src)
-{
-    if (&src != this)
-    {
-        _serverFd = src._serverFd;
-        _port = src._port;
-        _password = src._password;
-        _pollfds = src._pollfds;
-        _clients = src._clients;
-    }
-    return *this;
-}
 Server::~Server()
 {
+    // Close every fd still open at teardown so that exception paths
+    // (e.g. bind/listen failure after the socket was created) do not leak.
+    // _serverFd is skipped in the loop because pollLoop() registers it in
+    // _pollfds too, and closing the same fd twice must be avoided.
+    for (size_t i = 0; i < _pollfds.size(); ++i)
+    {
+        if (_pollfds[i].fd != _serverFd)
+            close(_pollfds[i].fd);
+    }
+    if (_serverFd >= 0)
+        close(_serverFd);
 }
 
 void Server::run()
