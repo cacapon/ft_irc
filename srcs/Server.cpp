@@ -6,7 +6,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <cerrno>
 #include <csignal>
 #include <cstddef>
 #include <cstdio>
@@ -110,10 +109,8 @@ bool Server::pollLoop()
         int ret = poll(&_pollfds[0], _pollfds.size(), -1);
         if (ret < 0)
         {
-            // A signal delivered while blocked in poll() interrupts it with
-            // EINTR; loop back around so the shutdown flag gets checked.
-            if (errno == EINTR)
-                continue;
+            if (g_shutdownRequested)
+                break;
             throw std::runtime_error("poll failed");
         }
 
@@ -197,9 +194,7 @@ bool Server::acceptClient()
     int clientFd = accept(_serverFd, NULL, NULL);
     if (clientFd < 0)
     {
-        // A shutdown signal can interrupt accept(); let pollLoop's condition
-        // decide instead of treating the interruption as a fatal error.
-        if (errno == EINTR)
+        if (g_shutdownRequested)
             return false;
         throw std::runtime_error("accept failed");
     }
