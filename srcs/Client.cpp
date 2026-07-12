@@ -10,6 +10,7 @@ Client::Client(const Client& src)
     : _fd(src.getFd()),
       _nick(src.getNick()),
       _user(src.getUser()),
+      _sendBuf(src.getSendBuf()),
       _recvBuf(src.getRecvBuf()),
       _passOk(src.isPassOk()),
       _overLength(src.isOverLength()),
@@ -25,6 +26,7 @@ Client& Client::operator=(const Client& other)
         _fd = other.getFd();
         _nick = other.getNick();
         _user = other.getUser();
+        _sendBuf = other.getSendBuf();
         _recvBuf = other.getRecvBuf();
         _passOk = other.isPassOk();
         _overLength = other.isOverLength();
