@@ -268,11 +268,9 @@ bool Server::receiveData(size_t i)
 {
     char buf[512];
     int bytes = recv(_pollfds[i].fd, buf, sizeof(buf) - 1, 0);
-    // A shutdown signal can interrupt recv(); retry on the next poll round
-    // instead of disconnecting a healthy client.
-    if (bytes < 0 && errno == EINTR)
+    if (bytes < 0)
         return false;
-    if (bytes <= 0)
+    if (bytes == 0)
     {
         disconnectClient(i, "Connection closed");
         return true;
@@ -358,13 +356,6 @@ bool Server::handleWrite(size_t i)
     ssize_t n = send(fd, buf.data(), buf.size(), 0);
     if (n > 0)
         client.eraseSendBuf(n);
-    if (n < 0)
-    {
-        // EINTR: a shutdown signal interrupted send(); the data stays in the
-        // send buffer and POLLOUT will retry, so it is as benign as EAGAIN.
-        if (!(errno == EWOULDBLOCK || errno == EAGAIN || errno == EINTR))
-            return (disconnectClient(i, "Write error"), true);
-    }
     if (!client.hasPendingSend())
         clearPollEvent(fd, POLLOUT);
     return false;
